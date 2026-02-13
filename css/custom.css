@@ -161,15 +161,29 @@
     font-size: 12px;
 }
 
+/* Drag & drop стили */
+.sortable-ghost {
+    opacity: 0.4;
+    background: #f0f0f0;
+}
+.sortable-drag {
+    cursor: move;
+}
+
 /* Страница папки */
 #folder-page {
     background: #fff;
     min-height: 100vh;
 }
+
+/* Верхняя полоска с названием */
 .folder-cover-strip {
-    height: 120px;
+    height: 150px;
     overflow: hidden;
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .folder-cover-strip__image {
     position: absolute;
@@ -180,6 +194,17 @@
     transform: translateY(-50%);
     background: url('https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg') center/cover no-repeat;
 }
+.folder-cover-strip__title {
+    position: relative;
+    z-index: 2;
+    color: #fff;
+    font-size: 48px;
+    font-weight: bold;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    font-family: 'TildaSans', Arial, sans-serif;
+    text-align: center;
+    padding: 0 20px;
+}
 
 /* Контент папки */
 .folder-content {
@@ -187,23 +212,27 @@
     padding: 30px 40px 60px;
     gap: 40px;
 }
+
+/* Левая колонка с кнопкой назад */
 .folder-sidebar {
-    width: 140px;
+    width: 160px;
     flex-shrink: 0;
 }
 .back-link {
     color: #000;
     text-decoration: none;
     font-size: 16px;
-    display: inline-block;
-    line-height: 1.3;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
 }
 .back-link:hover {
     font-weight: bold;
     text-decoration: none;
 }
 .back-arrow {
-    margin-right: 5px;
+    font-size: 20px;
 }
 
 /* Сетка фото */
@@ -229,6 +258,9 @@
     .photos-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
+    }
+    .folder-cover-strip__title {
+        font-size: 32px;
     }
 }
 .photo-item {
@@ -282,11 +314,11 @@
     position: relative;
     z-index: 1;
     max-width: 85%;
-    max-height: 80vh;
+    max-height: 75vh;
 }
 .fullscreen-viewer img {
     max-width: 100%;
-    max-height: 80vh;
+    max-height: 75vh;
     display: block;
 }
 .fullscreen-viewer__close {
@@ -320,6 +352,38 @@
 }
 .fullscreen-viewer__prev { left: 10px; }
 .fullscreen-viewer__next { right: 10px; }
+
+/* Кнопки в fullscreen для админа */
+.fullscreen-viewer__buttons {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    z-index: 2;
+}
+.viewer-btn {
+    background: rgba(255,255,255,0.9);
+    border: none;
+    padding: 10px 25px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+.viewer-btn:hover {
+    background: #fff;
+}
+.viewer-btn.danger {
+    background: rgba(231, 76, 60, 0.9);
+    color: #fff;
+}
+.viewer-btn.danger:hover {
+    background: #c0392b;
+}
+
+/* Кнопка скачать */
 .fullscreen-viewer__download {
     position: fixed;
     bottom: 30px;
