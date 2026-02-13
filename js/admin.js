@@ -242,7 +242,7 @@ var admin = {
         uploadNext(0);
     },
 
-        // Установить текущее фото как превью папки
+    // Установить текущее фото как превью папки
     setFolderCover: function() {
         var img = document.getElementById('fullscreen-image');
         if (!img || !img.src || !gallery.currentFolder) return;
@@ -256,7 +256,7 @@ var admin = {
                 gallery.currentFolder.cover_url = photoUrl;
                 
                 // Обновляем отображение на странице папки (верхняя полоска)
-                var coverImage = document.querySelector('.folder-cover-strip__image');
+                var coverImage = document.getElementById('folder-cover-image');
                 if (coverImage) {
                     coverImage.style.backgroundImage = "url('" + photoUrl + "')";
                 }
