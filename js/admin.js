@@ -242,7 +242,7 @@ var admin = {
         uploadNext(0);
     },
 
-    // Установить текущее фото как превью папки
+        // Установить текущее фото как превью папки
     setFolderCover: function() {
         var img = document.getElementById('fullscreen-image');
         if (!img || !img.src || !gallery.currentFolder) return;
@@ -252,9 +252,22 @@ var admin = {
         
         api.updateFolder(folderId, { cover_url: photoUrl }).then(function(result) {
             if (result) {
-                alert('Превью папки обновлено!');
+                // Обновляем локально
                 gallery.currentFolder.cover_url = photoUrl;
+                
+                // Обновляем отображение на странице папки (верхняя полоска)
+                var coverImage = document.querySelector('.folder-cover-strip__image');
+                if (coverImage) {
+                    coverImage.style.backgroundImage = "url('" + photoUrl + "')";
+                }
+                
+                alert('Превью папки обновлено!');
                 gallery.closeFullscreen();
+                
+                // Обновляем отображение в списке папок
+                setTimeout(function() {
+                    gallery.loadFolders();
+                }, 500);
             } else {
                 alert('Ошибка обновления превью');
             }
