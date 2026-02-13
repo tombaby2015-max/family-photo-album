@@ -134,7 +134,7 @@
     padding-bottom: 60px;
 }
 
-/* Карточка папки - теперь с реальным превью */
+/* Карточка папки - с реальным превью */
 .folder-card {
     position: relative;
     height: 280px;
@@ -208,7 +208,7 @@
     min-height: 100vh;
 }
 
-/* Верхняя полоска - без текста, просто фото */
+/* Верхняя полоска - просто фото без текста */
 .folder-cover-strip {
     height: 120px;
     overflow: hidden;
@@ -221,24 +221,26 @@
     background-position: center;
 }
 
-/* Название папки под полоской */
+/* Название папки под полоской - крупное и жирное */
 .folder-title-bar {
-    padding: 20px 40px 10px;
+    padding: 25px 40px 15px;
     background: #fff;
     text-align: right;
+    border-bottom: 1px solid #eee;
 }
 .folder-title-bar h2 {
     margin: 0;
-    font-size: 28px;
-    font-weight: 600;
+    font-size: 36px;
+    font-weight: 700;
     color: #000;
     font-family: 'TildaSans', Arial, sans-serif;
+    letter-spacing: 1px;
 }
 
 /* Контент папки */
 .folder-content {
     display: flex;
-    padding: 20px 40px 60px;
+    padding: 25px 40px 60px;
     gap: 30px;
 }
 
@@ -256,7 +258,7 @@
     gap: 8px;
     white-space: nowrap;
     font-weight: 500;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 .back-link:hover {
     font-weight: bold;
@@ -271,6 +273,15 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin-top: 10px;
+}
+
+/* Кнопки админа в сайдбаре - компактные */
+.sidebar-admin-buttons .admin-btn {
+    width: 100%;
+    margin-bottom: 0;
+    font-size: 12px;
+    padding: 6px 10px;
 }
 
 /* Сетка фото */
@@ -283,6 +294,9 @@
 @media (max-width: 1200px) {
     .photos-grid {
         grid-template-columns: repeat(3, 1fr);
+    }
+    .folder-title-bar h2 {
+        font-size: 28px;
     }
 }
 @media (max-width: 768px) {
@@ -302,7 +316,7 @@
         text-align: left;
     }
     .folder-title-bar h2 {
-        font-size: 22px;
+        font-size: 24px;
     }
 }
 .photo-item {
