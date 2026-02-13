@@ -5,10 +5,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Фотоальбом</title>
-    <meta property="og:url" content="https://tombaby2015-max.github.io/family-photo-archive/" />
+    <meta property="og:url" content="https://tombaby2015-max.github.io/family-photo-album/" />
     <meta property="og:title" content="Фотоальбом" />
     <meta property="og:description" content="Семейный фотоархив" />
-    <link rel="canonical" href="https://tombaby2015-max.github.io/family-photo-archive/">
+    <link rel="canonical" href="https://tombaby2015-max.github.io/family-photo-album/">
     <meta name="format-detection" content="telephone=no" />
     
     <!-- Стили Tilda -->
@@ -21,10 +21,13 @@
     
     <!-- Наши стили -->
     <link rel="stylesheet" href="css/custom.css" type="text/css" media="all" />
+    
+    <!-- SortableJS для drag & drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 </head>
 <body class="t-body" style="margin:0;">
 
-    <!-- COVER -->
+    <!-- COVER - главная страница -->
     <div class="t-cover" id="cover-section" style="height:100vh;background-image:url('https://thb.tildacdn.ink/tild3730-6566-4766-b165-306164333335/-/resize/20x/photo-1499002238440-.jpg');">
         <div class="t-cover__carrier" style="height:100vh; background:url('https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg') center/cover no-repeat;"></div>
         <div class="t-cover__filter" style="height:100vh;background-image: linear-gradient(to bottom, rgba(0,0,0,0.30), rgba(0,0,0,0.70));"></div>
@@ -82,14 +85,15 @@
         </div>
     </div>
 
-        <!-- СТРАНИЦА ПАПКИ -->
+    <!-- СТРАНИЦА ПАПКИ С ФОТО -->
     <div id="folder-page" style="display:none;">
-        <!-- Узкая полоска сверху -->
+        <!-- Верхняя полоска с названием папки -->
         <div class="folder-cover-strip">
             <div class="folder-cover-strip__image"></div>
+            <div class="folder-cover-strip__title" id="folder-cover-title"></div>
         </div>
         
-        <!-- Админ-панель для папки (скрыта по умолчанию) -->
+        <!-- Админ-панель для папки -->
         <div id="folder-admin-panel" class="admin-panel" style="display:none;">
             <div class="t-container">
                 <div class="t-col t-col_12">
@@ -101,11 +105,11 @@
             </div>
         </div>
         
-        <!-- Контент папки: сайдбар + фото -->
+        <!-- Контент папки -->
         <div class="folder-content">
             <div class="folder-sidebar">
                 <a href="#" class="back-link" onclick="gallery.showMainPage(); return false;">
-                    <span class="back-arrow">←</span>назад к<br>папкам
+                    <span class="back-arrow">←</span>Назад к папкам
                 </a>
             </div>
             <div class="photos-grid" id="photos-grid">
@@ -130,10 +134,19 @@
         <div class="fullscreen-viewer__overlay" onclick="gallery.closeFullscreen()"></div>
         <button class="fullscreen-viewer__close" onclick="gallery.closeFullscreen()">×</button>
         <button class="fullscreen-viewer__nav fullscreen-viewer__prev" onclick="gallery.prevPhoto()">‹</button>
+        
         <div class="fullscreen-viewer__image-container">
             <img id="fullscreen-image" src="" alt="">
         </div>
+        
         <button class="fullscreen-viewer__nav fullscreen-viewer__next" onclick="gallery.nextPhoto()">›</button>
+        
+        <!-- Кнопки для админа -->
+        <div class="fullscreen-viewer__buttons" id="fullscreen-admin-buttons" style="display:none;">
+            <button class="viewer-btn" onclick="admin.setFolderCover()">Превью папки</button>
+            <button class="viewer-btn danger" onclick="admin.deleteCurrentPhoto()">Удалить</button>
+        </div>
+        
         <a id="download-link" class="fullscreen-viewer__download" href="" download>скачать</a>
     </div>
 
