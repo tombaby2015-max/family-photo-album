@@ -155,6 +155,7 @@
     height: 100%;
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
 }
 .folder-card__title {
     position: absolute;
@@ -191,6 +192,97 @@
 .folder-card__admin-actions button:hover {
     background: #fff;
     transform: scale(1.1);
+}
+
+/* Редактирование превью - кнопки управления */
+.preview-editor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    pointer-events: none;
+}
+.preview-editor__btn {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    transition: all 0.2s;
+    line-height: 1;
+}
+.preview-editor__btn:hover {
+    background: #000;
+    transform: scale(1.1);
+}
+.preview-editor__btn.up {
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.preview-editor__btn.down {
+    bottom: 45px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.preview-editor__btn.left {
+    left: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.preview-editor__btn.right {
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.preview-editor__btn.zoom-out {
+    bottom: 5px;
+    left: 25%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+}
+.preview-editor__btn.zoom-in {
+    bottom: 5px;
+    right: 25%;
+    transform: translateX(50%);
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+}
+.preview-editor__btn.save {
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    padding: 0 15px;
+    border-radius: 18px;
+    font-size: 12px;
+    background: #27ae60;
+    border-color: #27ae60;
+}
+.preview-editor__btn.save:hover {
+    background: #2ecc71;
+}
+
+/* Режим редактирования */
+.folder-card.editing {
+    box-shadow: 0 0 0 3px #3498db;
+}
+.folder-card.editing .folder-card__admin-actions {
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* Drag & drop стили */
@@ -317,6 +409,17 @@
     }
     .folder-title-bar h2 {
         font-size: 24px;
+    }
+    .preview-editor__btn {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+    .preview-editor__btn.zoom-out,
+    .preview-editor__btn.zoom-in {
+        width: 34px;
+        height: 34px;
+        font-size: 20px;
     }
 }
 .photo-item {
