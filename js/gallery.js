@@ -121,10 +121,9 @@ var gallery = {
         if (mainFooter) mainFooter.style.display = 'none';
         if (folderPage) folderPage.style.display = 'block';
         
-        // Устанавливаем фото в верхнюю полоску (превью папки или дефолтное)
+                // Внутри папки всегда показываем оригинальное фото (не превью)
         if (coverImage) {
-            var imageUrl = folder.cover_url || 'https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg';
-            coverImage.style.backgroundImage = "url('" + imageUrl + "')";
+            coverImage.style.backgroundImage = "url('https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg')";
         }
         
         // Устанавливаем название папки под полоской
