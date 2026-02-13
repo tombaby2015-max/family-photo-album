@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Фотоальбом</title>
+    <meta property="og:url" content="https://tombaby2015-max.github.io/family-photo-archive/" />
+    <meta property="og:title" content="Фотоальбом" />
+    <meta property="og:description" content="Семейный фотоархив" />
+    <link rel="canonical" href="https://tombaby2015-max.github.io/family-photo-archive/">
+    <meta name="format-detection" content="telephone=no" />
+    
+    <!-- Стили Tilda -->
+    <link rel="stylesheet" href="https://static.tildacdn.ink/css/tilda-grid-3.0.min.css" type="text/css" media="all"/>
+    <link rel="stylesheet" href="https://static.tildacdn.ink/ws/project21315616/tilda-blocks-page115165096.min.css?t=1769977321" type="text/css" media="all" />
+    <link rel="stylesheet" href="https://static.tildacdn.ink/css/tilda-cover-1.0.min.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="https://static.tildacdn.ink/css/tilda-slds-1.4.min.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="https://static.tildacdn.ink/css/tilda-cards-1.0.min.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="https://static.tildacdn.ink/css/fonts-tildasans.css" type="text/css" media="all" />
+    
+    <!-- Наши стили -->
+    <link rel="stylesheet" href="css/custom.css" type="text/css" media="all" />
+</head>
+<body class="t-body" style="margin:0;">
+
+    <!-- COVER -->
+    <div class="t-cover" id="cover-section" style="height:100vh;background-image:url('https://thb.tildacdn.ink/tild3730-6566-4766-b165-306164333335/-/resize/20x/photo-1499002238440-.jpg');">
+        <div class="t-cover__carrier" style="height:100vh; background:url('https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg') center/cover no-repeat;"></div>
+        <div class="t-cover__filter" style="height:100vh;background-image: linear-gradient(to bottom, rgba(0,0,0,0.30), rgba(0,0,0,0.70));"></div>
+        <div class="t-container">
+            <div class="t-col t-col_12">
+                <div class="t-cover__wrapper t-valign_middle" style="height:100vh;">
+                    <div class="t001 t-align_center">
+                        <div class="t001__wrapper">
+                            <div class="t001__title t-title t-title_xl"><strong>ФОТОАЛЬБОМ</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="t-cover__arrow" onclick="scrollToFolders()">
+            <div class="t-cover__arrow-wrapper t-cover__arrow-wrapper_animated">
+                <svg style="fill:#ffffff;" width="38px" height="18px" viewBox="0 0 38.417 18.592">
+                    <path d="M19.208,18.592c-0.241,0-0.483-0.087-0.673-0.261L0.327,1.74c-0.408-0.372-0.438-1.004-0.066-1.413c0.372-0.409,1.004-0.439,1.413-0.066L19.208,16.24L36.743,0.261c0.411-0.372,1.042-0.342,1.413,0.066c0.372,0.408,0.343,1.041-0.065,1.413L19.881,18.332C19.691,18.505,19.449,18.592,19.208,18.592z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- ГЛАВНАЯ СТРАНИЦА С ПАПКАМИ -->
+    <div id="main-page">
+        <div id="admin-panel" class="admin-panel" style="display:none;">
+            <div class="t-container">
+                <div class="t-col t-col_12">
+                    <button class="admin-btn" onclick="admin.createFolder()">+ Создать папку</button>
+                    <button class="admin-btn logout" onclick="admin.logout()">Выйти</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="r t-rec t-rec_pt_30" style="padding-top:30px;" data-record-type="147">
+            <div class="t214">
+                <ul id="folders-container" class="t214__container t-card__container t-container t-container_flex">
+                    <li class="loading">Загрузка папок...</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="r t-rec t-rec_pt_60 t-rec_pb_60" style="padding-top:60px;padding-bottom:60px;">
+            <div class="t029">
+                <div class="t029__container t-container">
+                    <div class="t029__col t-col t-col_8">
+                        <div class="t029__linewrapper" style="opacity:0.2;">
+                            <div class="t029__opacity t029__opacity_left" style="background-image: linear-gradient(to left, #000000, rgba(0,0,0,0));"></div>
+                            <div class="t-divider t029__line" style="background: #000000;"></div>
+                            <div class="t029__opacity t029__opacity_right" style="background-image: linear-gradient(to right, #000000, rgba(0,0,0,0));"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- СТРАНИЦА ПАПКИ -->
+    <div id="folder-page" style="display:none;">
+        <div class="folder-cover-strip">
+            <div class="folder-cover-strip__image"></div>
+        </div>
+        
+        <div class="folder-content">
+            <div class="folder-sidebar">
+                <a href="#" class="back-link" onclick="gallery.showMainPage(); return false;">
+                    <span class="back-arrow">←</span>назад к<br>папкам
+                </a>
+            </div>
+            <div class="photos-grid" id="photos-grid">
+                <div class="loading">Загрузка фото...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ВХОДА -->
+    <div id="admin-modal" class="admin-modal" style="display:none;">
+        <div class="admin-modal__overlay" onclick="admin.closeModal()"></div>
+        <div class="admin-modal__content">
+            <h3>Вход в админку</h3>
+            <input type="password" id="admin-password" placeholder="Введите пароль">
+            <button onclick="admin.login()">Войти</button>
+            <p id="admin-error" class="admin-error"></p>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN ПРОСМОТР -->
+    <div id="fullscreen-viewer" class="fullscreen-viewer" style="display:none;">
+        <div class="fullscreen-viewer__overlay" onclick="gallery.closeFullscreen()"></div>
+        <button class="fullscreen-viewer__close" onclick="gallery.closeFullscreen()">×</button>
+        <button class="fullscreen-viewer__nav fullscreen-viewer__prev" onclick="gallery.prevPhoto()">‹</button>
+        <div class="fullscreen-viewer__image-container">
+            <img id="fullscreen-image" src="" alt="">
+        </div>
+        <button class="fullscreen-viewer__nav fullscreen-viewer__next" onclick="gallery.nextPhoto()">›</button>
+        <a id="download-link" class="fullscreen-viewer__download" href="" download>скачать</a>
+    </div>
+
+    <!-- ФУТЕР -->
+    <div id="main-footer" class="t-tildalabel t-tildalabel-free" style="padding: 20px; text-align: center; background:#fff;">
+        <button class="admin-login-btn" onclick="admin.openModal()">Админ</button>
+    </div>
+
+    <!-- Скрипты -->
+    <script src="js/api.js"></script>
+    <script src="js/gallery.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
