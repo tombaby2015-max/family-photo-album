@@ -82,6 +82,7 @@ var gallery = {
     createFolderCard: function(folder) {
         var isAdmin = api.isAdmin();
         var hiddenClass = folder.hidden ? 'hidden-folder' : '';
+        // Используем превью папки если есть, иначе дефолтное
         var coverImage = folder.cover_url || 'https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg';
         
         var adminActions = '';
@@ -207,7 +208,7 @@ var gallery = {
         '</div>';
     },
 
-       openFullscreen: function(index) {
+    openFullscreen: function(index) {
         var isAdmin = api.isAdmin();
         var visiblePhotos = [];
         for (var i = 0; i < this.currentPhotos.length; i++) {
