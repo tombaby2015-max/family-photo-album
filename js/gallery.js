@@ -111,19 +111,27 @@ var gallery = {
         var mainPage = document.getElementById('main-page');
         var mainFooter = document.getElementById('main-footer');
         var folderPage = document.getElementById('folder-page');
-        var folderAdminPanel = document.getElementById('folder-admin-panel');
-        var coverTitle = document.getElementById('folder-cover-title');
+        var sidebarButtons = document.getElementById('sidebar-admin-buttons');
+        var coverImage = document.getElementById('folder-cover-image');
+        var titleText = document.getElementById('folder-title-text');
         
         if (coverSection) coverSection.style.display = 'none';
         if (mainPage) mainPage.style.display = 'none';
         if (mainFooter) mainFooter.style.display = 'none';
         if (folderPage) folderPage.style.display = 'block';
         
-        // Устанавливаем название папки
-        if (coverTitle) coverTitle.textContent = folder.title;
+        // Устанавливаем фото в верхнюю полоску (превью папки или дефолтное)
+        if (coverImage) {
+            var imageUrl = folder.cover_url || 'https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg';
+            coverImage.style.backgroundImage = "url('" + imageUrl + "')";
+        }
         
-        if (api.isAdmin() && folderAdminPanel) {
-            folderAdminPanel.style.display = 'block';
+        // Устанавливаем название папки под полоской
+        if (titleText) titleText.textContent = folder.title;
+        
+        // Показываем админ-кнопки в сайдбаре если админ
+        if (sidebarButtons) {
+            sidebarButtons.style.display = api.isAdmin() ? 'flex' : 'none';
         }
         
         this.loadPhotos(folder.id);
