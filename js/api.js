@@ -110,20 +110,43 @@ const api = {
         }
     },
 
-    async uploadPhoto(folderId, fileUrl) {
+        // Upload photo - отправляем файл напрямую
+    async uploadPhoto(folderId, file) {
         try {
+            // Получаем информацию о папке (нужен topic_id)
+            const folders = await this.getFolders();
+            const folder = folders.find(f => f.id === folderId);
+            if (!folder) return null;
+
+            // Создаем FormData для отправки файла
+            const formData = new FormData();
+            formData.append('chat_id', env.CHAT_ID); // Это не сработает с клиента
+            
+            // Пока отправляем через base64 но с правильным форматом
+            const base64 = await this.getFileUrl(file);
+            
             const response = await fetch(`${API_BASE}/photos`, {
                 method: 'POST',
                 headers: this.getHeaders(true),
-                body: JSON.stringify({ folder_id: folderId, file_url: fileUrl })
+                body: JSON.stringify({ 
+                    folder_id: folderId, 
+                    file_url: base64,
+                    filename: file.name
+                })
             });
+            
+            if (!response.ok) {
+                const error = await response.text();
+                console.error('Server error:', error);
+                return null;
+            }
+            
             return await response.json();
         } catch (error) {
             console.error('Error uploading photo:', error);
             return null;
         }
     },
-
     async updatePhoto(photoId, updates) {
         try {
             const response = await fetch(`${API_BASE}/photos`, {
