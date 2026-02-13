@@ -136,9 +136,18 @@ const admin = {
         grid.innerHTML = `<div class="loading">Загрузка: 0/${total}...</div>`;
         
         for (const file of files) {
+            console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+            
             try {
-                const fileUrl = await api.getFileUrl(file);
-                const result = await api.uploadPhoto(folderId, fileUrl);
+                // Проверяем размер (Telegram ограничение ~20MB)
+                if (file.size > 20 * 1024 * 1024) {
+                    console.error('File too large:', file.name);
+                    failed++;
+                    continue;
+                }
+                
+                const result = await api.uploadPhoto(folderId, file);
+                console.log('Upload result:', result);
                 
                 if (result && result.id) {
                     uploaded++;
@@ -162,7 +171,7 @@ const admin = {
         }
         
         input.value = '';
-    },
+    }
 
     async togglePhotoHidden(photoId, hidden) {
         if (!confirm(hidden ? 'Скрыть фото?' : 'Показать фото?')) return;
