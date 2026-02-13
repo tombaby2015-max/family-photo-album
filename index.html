@@ -87,31 +87,34 @@
 
     <!-- СТРАНИЦА ПАПКИ С ФОТО -->
     <div id="folder-page" style="display:none;">
-        <!-- Верхняя полоска с названием папки -->
+        <!-- Верхняя полоска - просто фото без текста -->
         <div class="folder-cover-strip">
-            <div class="folder-cover-strip__image"></div>
-            <div class="folder-cover-strip__title" id="folder-cover-title"></div>
+            <div class="folder-cover-strip__image" id="folder-cover-image"></div>
         </div>
         
-        <!-- Админ-панель для папки -->
-        <div id="folder-admin-panel" class="admin-panel" style="display:none;">
-            <div class="t-container">
-                <div class="t-col t-col_12">
+        <!-- Название папки под полоской -->
+        <div class="folder-title-bar">
+            <h2 id="folder-title-text"></h2>
+        </div>
+        
+        <!-- Контент папки -->
+        <div class="folder-content">
+            <!-- Левая колонка с кнопкой назад и админ-кнопками -->
+            <div class="folder-sidebar">
+                <a href="#" class="back-link" onclick="gallery.showMainPage(); return false;">
+                    <span class="back-arrow">←</span>Назад к папкам
+                </a>
+                
+                <!-- Админ-кнопки в сайдбаре -->
+                <div class="sidebar-admin-buttons" id="sidebar-admin-buttons" style="display:none;">
                     <button class="admin-btn" onclick="admin.uploadPhoto()">+ Загрузить фото</button>
                     <input type="file" id="photo-upload" multiple accept="image/*" style="display:none;" onchange="admin.handlePhotoUpload(this)">
                     <button class="admin-btn" onclick="admin.renameFolder()">Переименовать</button>
                     <button class="admin-btn danger" onclick="admin.deleteFolder()">Удалить папку</button>
                 </div>
             </div>
-        </div>
-        
-        <!-- Контент папки -->
-        <div class="folder-content">
-            <div class="folder-sidebar">
-                <a href="#" class="back-link" onclick="gallery.showMainPage(); return false;">
-                    <span class="back-arrow">←</span>Назад к папкам
-                </a>
-            </div>
+            
+            <!-- Сетка фото -->
             <div class="photos-grid" id="photos-grid">
                 <div class="loading">Загрузка фото...</div>
             </div>
