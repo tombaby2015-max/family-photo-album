@@ -1,186 +1,274 @@
-const gallery = {
+var gallery = {
     folders: [],
     currentPhotos: [],
     currentFolder: null,
     currentPhotoIndex: 0,
 
-    async init() {
-        await this.loadFolders();
+    init: function() {
+        var self = this;
+        // Проверяем hash при загрузке
+        var hash = window.location.hash;
+        if (hash && hash.indexOf('folder=') !== -1) {
+            var folderId = hash.split('folder=')[1];
+            // Загружаем папки и открываем нужную
+            api.getFolders().then(function(folders) {
+                self.folders = folders;
+                var folder = null;
+                for (var i = 0; i < folders.length; i++) {
+                    if (folders[i].id === folderId) {
+                        folder = folders[i];
+                        break;
+                    }
+                }
+                if (folder) {
+                    self.openFolder(folder, false);
+                } else {
+                    self.loadFolders();
+                }
+            });
+        } else {
+            this.loadFolders();
+        }
     },
 
-    async loadFolders() {
-        const container = document.getElementById('folders-container');
-        container.innerHTML = '<li class="loading">Загрузка папок...</li>';
+    loadFolders: function() {
+        var self = this;
+        var container = document.getElementById('folders-container');
+        if (container) container.innerHTML = '<li class="loading">Загрузка папок...</li>';
         
-        this.folders = await api.getFolders();
-        
-        const isAdmin = api.isAdmin();
-        const visibleFolders = isAdmin ? this.folders : this.folders.filter(f => !f.hidden);
-        
-        if (visibleFolders.length === 0) {
-            container.innerHTML = '<li class="empty-state"><h4>Папок пока нет</h4></li>';
-            return;
-        }
-        
-        visibleFolders.sort((a, b) => (a.order || 0) - (b.order || 0));
-        
-        container.innerHTML = visibleFolders.map(folder => this.createFolderCard(folder)).join('');
-        
-        visibleFolders.forEach(folder => {
-            const card = document.getElementById(`folder-${folder.id}`);
-            if (card) {
-                card.onclick = (e) => {
-                    if (e.target.closest('.folder-card__admin-actions')) return;
-                    this.openFolder(folder);
-                };
+        api.getFolders().then(function(folders) {
+            self.folders = folders;
+            
+            var isAdmin = api.isAdmin();
+            var visibleFolders = [];
+            for (var i = 0; i < folders.length; i++) {
+                if (isAdmin || !folders[i].hidden) {
+                    visibleFolders.push(folders[i]);
+                }
+            }
+            
+            if (visibleFolders.length === 0) {
+                if (container) container.innerHTML = '<li class="empty-state"><h4>Папок пока нет</h4></li>';
+                return;
+            }
+            
+            visibleFolders.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+            
+            if (container) {
+                container.innerHTML = visibleFolders.map(function(folder) {
+                    return self.createFolderCard(folder);
+                }).join('');
+            }
+            
+            // Инициализируем drag & drop если админ
+            if (isAdmin && typeof admin !== 'undefined') {
+                admin.initSortable();
+            }
+            
+            for (var j = 0; j < visibleFolders.length; j++) {
+                (function(folder) {
+                    var card = document.getElementById('folder-' + folder.id);
+                    if (card) {
+                        card.onclick = function(e) {
+                            if (e.target.closest('.folder-card__admin-actions')) return;
+                            self.openFolder(folder);
+                        };
+                    }
+                })(visibleFolders[j]);
             }
         });
     },
 
-    createFolderCard(folder) {
-        const isAdmin = api.isAdmin();
-        const hiddenClass = folder.hidden ? 'hidden-folder' : '';
-        const coverImage = folder.cover_url || 'https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg';
+    createFolderCard: function(folder) {
+        var isAdmin = api.isAdmin();
+        var hiddenClass = folder.hidden ? 'hidden-folder' : '';
+        var coverImage = folder.cover_url || 'https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg';
         
-        let adminActions = '';
+        var adminActions = '';
         if (isAdmin) {
-            adminActions = `
-                <div class="folder-card__admin-actions">
-                    <button onclick="admin.toggleFolderHidden('${folder.id}', ${!folder.hidden})" title="${folder.hidden ? 'Показать' : 'Скрыть'}">
-                        ${folder.hidden ? '👁' : '🙈'}
-                    </button>
-                    <button onclick="admin.renameFolder('${folder.id}', '${folder.title}')" title="Переименовать">✏️</button>
-                    <button onclick="admin.deleteFolder('${folder.id}')" title="Удалить">🗑️</button>
-                </div>
-            `;
+            adminActions = '<div class="folder-card__admin-actions">' +
+                '<button onclick="event.stopPropagation(); admin.toggleFolderHidden(\'' + folder.id + '\', ' + !folder.hidden + ')" title="' + (folder.hidden ? 'Показать' : 'Скрыть') + '">' + (folder.hidden ? '👁' : '🙈') + '</button>' +
+                '<button onclick="event.stopPropagation(); admin.renameFolder(\'' + folder.id + '\', \'' + folder.title + '\')" title="Переименовать">✏️</button>' +
+                '<button onclick="event.stopPropagation(); admin.deleteFolder(\'' + folder.id + '\')" title="Удалить">🗑️</button>' +
+            '</div>';
         }
         
-        return `
-            <li id="folder-${folder.id}" class="t214__col t-item t-card__col t-col t-col_4 folder-card ${hiddenClass}">
-                <div class="folder-card__image" style="background-image: url('${coverImage}');">
-                    <div class="folder-card__title">${folder.title}</div>
-                    ${adminActions}
-                </div>
-            </li>
-        `;
+        return '<li id="folder-' + folder.id + '" class="t214__col t-item t-card__col t-col t-col_4 folder-card ' + hiddenClass + '" data-id="' + folder.id + '">' +
+            '<div class="folder-card__image" style="background-image: url(\'' + coverImage + '\');">' +
+                '<div class="folder-card__title">' + folder.title + '</div>' +
+                adminActions +
+            '</div>' +
+        '</li>';
     },
 
-    async openFolder(folder) {
+    openFolder: function(folder, updateHash) {
+        if (updateHash !== false) {
+            window.location.hash = 'folder=' + folder.id;
+        }
         this.currentFolder = folder;
         
-        document.getElementById('cover-section').style.display = 'none';
-        document.getElementById('main-page').style.display = 'none';
-        document.getElementById('main-footer').style.display = 'none';
-        document.getElementById('folder-page').style.display = 'block';
+        var coverSection = document.getElementById('cover-section');
+        var mainPage = document.getElementById('main-page');
+        var mainFooter = document.getElementById('main-footer');
+        var folderPage = document.getElementById('folder-page');
+        var folderAdminPanel = document.getElementById('folder-admin-panel');
+        var coverTitle = document.getElementById('folder-cover-title');
         
-        if (api.isAdmin()) {
-            document.getElementById('folder-admin-panel').style.display = 'block';
+        if (coverSection) coverSection.style.display = 'none';
+        if (mainPage) mainPage.style.display = 'none';
+        if (mainFooter) mainFooter.style.display = 'none';
+        if (folderPage) folderPage.style.display = 'block';
+        
+        // Устанавливаем название папки
+        if (coverTitle) coverTitle.textContent = folder.title;
+        
+        if (api.isAdmin() && folderAdminPanel) {
+            folderAdminPanel.style.display = 'block';
         }
         
-        await this.loadPhotos(folder.id);
+        this.loadPhotos(folder.id);
         window.scrollTo(0, 0);
     },
 
-    showMainPage() {
-        document.getElementById('folder-page').style.display = 'none';
-        document.getElementById('cover-section').style.display = 'block';
-        document.getElementById('main-page').style.display = 'block';
-        document.getElementById('main-footer').style.display = 'block';
+    showMainPage: function() {
+        window.location.hash = '';
+        
+        var coverSection = document.getElementById('cover-section');
+        var mainPage = document.getElementById('main-page');
+        var mainFooter = document.getElementById('main-footer');
+        var folderPage = document.getElementById('folder-page');
+        
+        if (folderPage) folderPage.style.display = 'none';
+        if (coverSection) coverSection.style.display = 'block';
+        if (mainPage) mainPage.style.display = 'block';
+        if (mainFooter) mainFooter.style.display = 'block';
+        
         this.currentFolder = null;
         this.currentPhotos = [];
-        window.scrollTo(0, document.getElementById('cover-section').offsetHeight);
+        
+        if (coverSection) {
+            window.scrollTo(0, coverSection.offsetHeight);
+        }
         this.loadFolders();
     },
 
-    async loadPhotos(folderId) {
-        const grid = document.getElementById('photos-grid');
-        grid.innerHTML = '<div class="loading">Загрузка фото...</div>';
+    loadPhotos: function(folderId) {
+        var self = this;
+        var grid = document.getElementById('photos-grid');
+        if (grid) grid.innerHTML = '<div class="loading">Загрузка фото...</div>';
         
-        this.currentPhotos = await api.getPhotos(folderId);
-        
-        const isAdmin = api.isAdmin();
-        const visiblePhotos = isAdmin ? this.currentPhotos : this.currentPhotos.filter(p => !p.hidden);
-        
-        if (visiblePhotos.length === 0) {
-            grid.innerHTML = '<div class="empty-state"><h4>В этой папке пока нет фото</h4></div>';
-            return;
-        }
-        
-        grid.innerHTML = visiblePhotos.map((photo, index) => this.createPhotoItem(photo, index)).join('');
+        api.getPhotos(folderId).then(function(photos) {
+            self.currentPhotos = photos;
+            
+            var isAdmin = api.isAdmin();
+            var visiblePhotos = [];
+            for (var i = 0; i < photos.length; i++) {
+                if (isAdmin || !photos[i].hidden) {
+                    visiblePhotos.push(photos[i]);
+                }
+            }
+            
+            if (visiblePhotos.length === 0) {
+                if (grid) grid.innerHTML = '<div class="empty-state"><h4>В этой папке пока нет фото</h4></div>';
+                return;
+            }
+            
+            if (grid) {
+                grid.innerHTML = visiblePhotos.map(function(photo, index) {
+                    return self.createPhotoItem(photo, index);
+                }).join('');
+            }
+        });
     },
 
-    createPhotoItem(photo, index) {
-        const isAdmin = api.isAdmin();
-        const hiddenClass = photo.hidden ? 'hidden-photo' : '';
+    createPhotoItem: function(photo, index) {
+        var isAdmin = api.isAdmin();
+        var hiddenClass = photo.hidden ? 'hidden-photo' : '';
         
-        let adminActions = '';
+        var adminActions = '';
         if (isAdmin) {
-            adminActions = `
-                <div class="photo-item__admin-actions">
-                    <button onclick="admin.togglePhotoHidden('${photo.id}', ${!photo.hidden})" title="${photo.hidden ? 'Показать' : 'Скрыть'}">
-                        ${photo.hidden ? '👁' : '🙈'}
-                    </button>
-                    <button onclick="admin.deletePhoto('${photo.id}')" title="Удалить">🗑️</button>
-                </div>
-            `;
+            adminActions = '<div class="photo-item__admin-actions" onclick="event.stopPropagation()">' +
+                '<button onclick="event.stopPropagation(); admin.togglePhotoHidden(\'' + photo.id + '\', ' + !photo.hidden + ')" title="' + (photo.hidden ? 'Показать' : 'Скрыть') + '">' + (photo.hidden ? '👁' : '🙈') + '</button>' +
+                '<button onclick="event.stopPropagation(); admin.deletePhoto(\'' + photo.id + '\')" title="Удалить">🗑️</button>' +
+            '</div>';
         }
         
-        return `
-            <div class="photo-item ${hiddenClass}" onclick="gallery.openFullscreen(${index})">
-                <img src="${photo.url}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">
-                ${adminActions}
-            </div>
-        `;
+        return '<div class="photo-item ' + hiddenClass + '" onclick="gallery.openFullscreen(' + index + ')">' +
+            '<img src="' + photo.url + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">' +
+            adminActions +
+        '</div>';
     },
 
-    openFullscreen(index) {
-        const isAdmin = api.isAdmin();
-        this.currentPhotos = isAdmin ? this.currentPhotos : this.currentPhotos.filter(p => !p.hidden);
+    openFullscreen: function(index) {
+        var isAdmin = api.isAdmin();
+        var visiblePhotos = [];
+        for (var i = 0; i < this.currentPhotos.length; i++) {
+            if (isAdmin || !this.currentPhotos[i].hidden) {
+                visiblePhotos.push(this.currentPhotos[i]);
+            }
+        }
+        this.currentPhotos = visiblePhotos;
         
         if (index < 0 || index >= this.currentPhotos.length) return;
         
         this.currentPhotoIndex = index;
-        const photo = this.currentPhotos[index];
+        var photo = this.currentPhotos[index];
         
-        document.getElementById('fullscreen-image').src = photo.url;
-        document.getElementById('download-link').href = photo.url;
-        document.getElementById('fullscreen-viewer').style.display = 'flex';
+        var img = document.getElementById('fullscreen-image');
+        var link = document.getElementById('download-link');
+        var viewer = document.getElementById('fullscreen-viewer');
+        var adminButtons = document.getElementById('fullscreen-admin-buttons');
         
-        document.addEventListener('keydown', this.handleKeydown);
+        if (img) img.src = photo.url;
+        if (link) link.href = photo.url;
+        if (viewer) viewer.style.display = 'flex';
+        
+        // Показываем кнопки админа если админ
+        if (adminButtons) {
+            adminButtons.style.display = isAdmin ? 'flex' : 'none';
+        }
+        
+        var self = this;
+        this.keyHandler = function(e) {
+            if (e.key === 'Escape') {
+                self.closeFullscreen();
+            } else if (e.key === 'ArrowLeft') {
+                self.prevPhoto();
+            } else if (e.key === 'ArrowRight') {
+                self.nextPhoto();
+            }
+        };
+        document.addEventListener('keydown', this.keyHandler);
     },
 
-    closeFullscreen() {
-        document.getElementById('fullscreen-viewer').style.display = 'none';
-        document.removeEventListener('keydown', this.handleKeydown);
+    closeFullscreen: function() {
+        var viewer = document.getElementById('fullscreen-viewer');
+        if (viewer) viewer.style.display = 'none';
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+        }
     },
 
-    prevPhoto() {
+    prevPhoto: function() {
         if (this.currentPhotoIndex > 0) {
             this.openFullscreen(this.currentPhotoIndex - 1);
         }
     },
 
-    nextPhoto() {
+    nextPhoto: function() {
         if (this.currentPhotoIndex < this.currentPhotos.length - 1) {
             this.openFullscreen(this.currentPhotoIndex + 1);
-        }
-    },
-
-    handleKeydown(e) {
-        if (e.key === 'Escape') {
-            gallery.closeFullscreen();
-        } else if (e.key === 'ArrowLeft') {
-            gallery.prevPhoto();
-        } else if (e.key === 'ArrowRight') {
-            gallery.nextPhoto();
         }
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     gallery.init();
 });
 
 function scrollToFolders() {
-    document.getElementById('main-page').scrollIntoView({ behavior: 'smooth' });
+    var mainPage = document.getElementById('main-page');
+    if (mainPage) {
+        mainPage.scrollIntoView({ behavior: 'smooth' });
+    }
 }
