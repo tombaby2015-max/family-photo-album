@@ -199,7 +199,7 @@ var gallery = {
         '</div>';
     },
 
-    openFullscreen: function(index) {
+       openFullscreen: function(index) {
         var isAdmin = api.isAdmin();
         var visiblePhotos = [];
         for (var i = 0; i < this.currentPhotos.length; i++) {
@@ -217,16 +217,17 @@ var gallery = {
         var img = document.getElementById('fullscreen-image');
         var link = document.getElementById('download-link');
         var viewer = document.getElementById('fullscreen-viewer');
-        var adminButtons = document.getElementById('fullscreen-admin-buttons');
+        
+        // Показываем/скрываем кнопки админа
+        var btnCover = document.getElementById('btn-set-cover');
+        var btnDelete = document.getElementById('btn-delete-photo');
+        
+        if (btnCover) btnCover.style.display = isAdmin ? 'inline-block' : 'none';
+        if (btnDelete) btnDelete.style.display = isAdmin ? 'inline-block' : 'none';
         
         if (img) img.src = photo.url;
         if (link) link.href = photo.url;
         if (viewer) viewer.style.display = 'flex';
-        
-        // Показываем кнопки админа если админ
-        if (adminButtons) {
-            adminButtons.style.display = isAdmin ? 'flex' : 'none';
-        }
         
         var self = this;
         this.keyHandler = function(e) {
