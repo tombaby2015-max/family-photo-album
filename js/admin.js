@@ -52,17 +52,17 @@ var admin = {
 
     showAdminUI: function() {
         var adminPanel = document.getElementById('admin-panel');
-        var folderAdminPanel = document.getElementById('folder-admin-panel');
+        var folderAdminPanel = document.getElementById('sidebar-admin-buttons');
         
         if (adminPanel) adminPanel.style.display = 'block';
-        if (folderAdminPanel) folderAdminPanel.style.display = 'block';
+        if (folderAdminPanel) folderAdminPanel.style.display = 'flex';
         
         gallery.loadFolders();
     },
 
     hideAdminUI: function() {
         var adminPanel = document.getElementById('admin-panel');
-        var folderAdminPanel = document.getElementById('folder-admin-panel');
+        var folderAdminPanel = document.getElementById('sidebar-admin-buttons');
         
         if (adminPanel) adminPanel.style.display = 'none';
         if (folderAdminPanel) folderAdminPanel.style.display = 'none';
@@ -137,8 +137,8 @@ var admin = {
             if (result) {
                 if (gallery.currentFolder && gallery.currentFolder.id === id) {
                     gallery.currentFolder.title = newTitle;
-                    var coverTitle = document.getElementById('folder-cover-title');
-                    if (coverTitle) coverTitle.textContent = newTitle;
+                    var titleText = document.getElementById('folder-title-text');
+                    if (titleText) titleText.textContent = newTitle;
                 }
                 gallery.loadFolders();
             } else {
@@ -264,10 +264,8 @@ var admin = {
                 alert('Превью папки обновлено!');
                 gallery.closeFullscreen();
                 
-                // Обновляем отображение в списке папок
-                setTimeout(function() {
-                    gallery.loadFolders();
-                }, 500);
+                // Обновляем отображение в списке папок на главной
+                gallery.loadFolders();
             } else {
                 alert('Ошибка обновления превью');
             }
