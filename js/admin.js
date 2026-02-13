@@ -1,8 +1,10 @@
+// Модуль администратора
 const admin = {
-    openModal() {
-        const modal = document.getElementById('admin-modal');
-        const passwordInput = document.getElementById('admin-password');
-        const errorEl = document.getElementById('admin-error');
+    // Открыть модальное окно входа
+    openModal: function() {
+        var modal = document.getElementById('admin-modal');
+        var passwordInput = document.getElementById('admin-password');
+        var errorEl = document.getElementById('admin-error');
         
         if (modal) {
             modal.style.display = 'flex';
@@ -12,48 +14,50 @@ const admin = {
         }
     },
 
-    closeModal() {
-        const modal = document.getElementById('admin-modal');
+    // Закрыть модальное окно
+    closeModal: function() {
+        var modal = document.getElementById('admin-modal');
         if (modal) modal.style.display = 'none';
     },
 
-    async login() {
-        const passwordInput = document.getElementById('admin-password');
-        const errorEl = document.getElementById('admin-error');
+    // Вход в админку
+    login: function() {
+        var passwordInput = document.getElementById('admin-password');
+        var errorEl = document.getElementById('admin-error');
         
         if (!passwordInput) return;
         
-        const password = passwordInput.value;
+        var password = passwordInput.value;
         
         if (!password) {
             if (errorEl) errorEl.textContent = 'Введите пароль';
             return;
         }
         
-        try {
-            const result = await api.login(password);
-            
+        api.login(password).then(function(result) {
             if (result.success) {
-                this.closeModal();
-                this.showAdminUI();
+                admin.closeModal();
+                admin.showAdminUI();
                 if (typeof gallery !== 'undefined') gallery.loadFolders();
             } else {
                 if (errorEl) errorEl.textContent = result.error || 'Ошибка входа';
             }
-        } catch (e) {
+        }).catch(function(e) {
             if (errorEl) errorEl.textContent = 'Ошибка соединения';
-        }
+        });
     },
 
-    logout() {
+    // Выход из админки
+    logout: function() {
         api.logout();
-        this.hideAdminUI();
+        admin.hideAdminUI();
         if (typeof gallery !== 'undefined') gallery.showMainPage();
     },
 
-    showAdminUI() {
-        const adminPanel = document.getElementById('admin-panel');
-        const folderAdminPanel = document.getElementById('folder-admin-panel');
+    // Показать админ-интерфейс
+    showAdminUI: function() {
+        var adminPanel = document.getElementById('admin-panel');
+        var folderAdminPanel = document.getElementById('folder-admin-panel');
         
         if (adminPanel) adminPanel.style.display = 'block';
         if (folderAdminPanel) folderAdminPanel.style.display = 'block';
@@ -61,9 +65,10 @@ const admin = {
         if (typeof gallery !== 'undefined') gallery.loadFolders();
     },
 
-    hideAdminUI() {
-        const adminPanel = document.getElementById('admin-panel');
-        const folderAdminPanel = document.getElementById('folder-admin-panel');
+    // Скрыть админ-интерфейс
+    hideAdminUI: function() {
+        var adminPanel = document.getElementById('admin-panel');
+        var folderAdminPanel = document.getElementById('folder-admin-panel');
         
         if (adminPanel) adminPanel.style.display = 'none';
         if (folderAdminPanel) folderAdminPanel.style.display = 'none';
@@ -71,34 +76,34 @@ const admin = {
         if (typeof gallery !== 'undefined') gallery.loadFolders();
     },
 
-    async createFolder() {
-        const title = prompt('Введите название папки:');
+    // Создать папку
+    createFolder: function() {
+        var title = prompt('Введите название папки:');
         if (!title) return;
         
-        try {
-            const result = await api.createFolder(title);
+        api.createFolder(title).then(function(result) {
             if (result && result.id) {
                 alert('Папка создана!');
                 if (typeof gallery !== 'undefined') gallery.loadFolders();
             } else {
                 alert('Ошибка при создании папки');
             }
-        } catch (e) {
+        }).catch(function(e) {
             alert('Ошибка при создании папки');
-        }
+        });
     },
 
-    async renameFolder(folderId, currentTitle) {
-        const id = folderId || (gallery && gallery.currentFolder ? gallery.currentFolder.id : null);
-        const title = currentTitle || (gallery && gallery.currentFolder ? gallery.currentFolder.title : '');
+    // Переименовать папку
+    renameFolder: function(folderId, currentTitle) {
+        var id = folderId || (gallery && gallery.currentFolder ? gallery.currentFolder.id : null);
+        var title = currentTitle || (gallery && gallery.currentFolder ? gallery.currentFolder.title : '');
         
         if (!id) return;
         
-        const newTitle = prompt('Новое название:', title);
+        var newTitle = prompt('Новое название:', title);
         if (!newTitle || newTitle === title) return;
         
-        try {
-            const result = await api.updateFolder(id, { title: newTitle });
+        api.updateFolder(id, { title: newTitle }).then(function(result) {
             if (result) {
                 if (gallery && gallery.currentFolder && gallery.currentFolder.id === id) {
                     gallery.currentFolder.title = newTitle;
@@ -107,34 +112,34 @@ const admin = {
             } else {
                 alert('Ошибка при переименовании');
             }
-        } catch (e) {
+        }).catch(function(e) {
             alert('Ошибка при переименовании');
-        }
+        });
     },
 
-    async toggleFolderHidden(folderId, hidden) {
+    // Скрыть/показать папку
+    toggleFolderHidden: function(folderId, hidden) {
         if (!confirm(hidden ? 'Скрыть папку?' : 'Показать папку?')) return;
         
-        try {
-            const result = await api.updateFolder(folderId, { hidden });
+        api.updateFolder(folderId, { hidden: hidden }).then(function(result) {
             if (result) {
                 gallery.loadFolders();
             } else {
                 alert('Ошибка');
             }
-        } catch (e) {
+        }).catch(function(e) {
             alert('Ошибка');
-        }
+        });
     },
 
-    async deleteFolder(folderId) {
-        const id = folderId || (gallery && gallery.currentFolder ? gallery.currentFolder.id : null);
+    // Удалить папку
+    deleteFolder: function(folderId) {
+        var id = folderId || (gallery && gallery.currentFolder ? gallery.currentFolder.id : null);
         if (!id) return;
         
         if (!confirm('Удалить папку? Все фото в ней будут удалены. Это действие нельзя отменить.')) return;
         
-        try {
-            const result = await api.deleteFolder(id);
+        api.deleteFolder(id).then(function(result) {
             if (result) {
                 if (gallery && gallery.currentFolder && gallery.currentFolder.id === id) {
                     gallery.showMainPage();
@@ -144,18 +149,20 @@ const admin = {
             } else {
                 alert('Ошибка при удалении');
             }
-        } catch (e) {
+        }).catch(function(e) {
             alert('Ошибка при удалении');
-        }
+        });
     },
 
-    uploadPhoto() {
-        const input = document.getElementById('photo-upload');
+    // Открыть выбор файлов для загрузки
+    uploadPhoto: function() {
+        var input = document.getElementById('photo-upload');
         if (input) input.click();
     },
 
-    async handlePhotoUpload(input) {
-        const files = input.files;
+    // Обработка загрузки фото
+    handlePhotoUpload: function(input) {
+        var files = input.files;
         if (!files.length) return;
         
         if (!gallery || !gallery.currentFolder) {
@@ -163,70 +170,77 @@ const admin = {
             return;
         }
         
-        const folderId = gallery.currentFolder.id;
-        const total = files.length;
-        let uploaded = 0;
-        let failed = 0;
+        var folderId = gallery.currentFolder.id;
+        var total = files.length;
+        var uploaded = 0;
+        var failed = 0;
         
-        const grid = document.getElementById('photos-grid');
-        if (grid) grid.innerHTML = `<div class="loading">Загрузка: 0/${total}...</div>`;
+        var grid = document.getElementById('photos-grid');
+        if (grid) grid.innerHTML = '<div class="loading">Загрузка: 0/' + total + '...</div>';
         
-        for (const file of files) {
-            try {
-                const result = await api.uploadPhoto(folderId, file);
-                
+        function uploadNext(index) {
+            if (index >= files.length) {
+                // Все файлы обработаны
+                gallery.loadPhotos(folderId).then(function() {
+                    if (failed > 0) {
+                        alert('Загружено: ' + uploaded + ', Ошибок: ' + failed);
+                    } else {
+                        alert('Успешно загружено ' + uploaded + ' фото!');
+                    }
+                });
+                input.value = '';
+                return;
+            }
+            
+            var file = files[index];
+            
+            api.uploadPhoto(folderId, file).then(function(result) {
                 if (result && result.id) {
                     uploaded++;
                 } else {
                     failed++;
                 }
-            } catch (error) {
+                if (grid) grid.innerHTML = '<div class="loading">Загрузка: ' + (uploaded + failed) + '/' + total + '...</div>';
+                uploadNext(index + 1);
+            }).catch(function(error) {
                 console.error('Upload error:', error);
                 failed++;
-            }
-            
-            if (grid) grid.innerHTML = `<div class="loading">Загрузка: ${uploaded + failed}/${total}...</div>`;
+                if (grid) grid.innerHTML = '<div class="loading">Загрузка: ' + (uploaded + failed) + '/' + total + '...</div>';
+                uploadNext(index + 1);
+            });
         }
         
-        await gallery.loadPhotos(folderId);
-        
-        if (failed > 0) {
-            alert(`Загружено: ${uploaded}, Ошибок: ${failed}`);
-        } else {
-            alert(`Успешно загружено ${uploaded} фото!`);
-        }
-        
-        input.value = '';
+        uploadNext(0);
     },
 
-    async togglePhotoHidden(photoId, hidden) {
+    // Скрыть/показать фото
+    togglePhotoHidden: function(photoId, hidden) {
         if (!confirm(hidden ? 'Скрыть фото?' : 'Показать фото?')) return;
         
-        try {
-            const result = await api.updatePhoto(photoId, { hidden });
+        api.updatePhoto(photoId, { hidden: hidden }).then(function(result) {
             if (result && gallery && gallery.currentFolder) {
                 gallery.loadPhotos(gallery.currentFolder.id);
             } else {
                 alert('Ошибка');
             }
-        } catch (e) {
+        }).catch(function(e) {
             alert('Ошибка');
-        }
+        });
     },
 
-    async deletePhoto(photoId) {
+    // Удалить фото
+    deletePhoto: function(photoId) {
         if (!confirm('Удалить фото? Это действие нельзя отменить.')) return;
         
-        try {
-            const result = await api.deletePhoto(photoId);
+        api.deletePhoto(photoId).then(function(result) {
             if (result && gallery && gallery.currentFolder) {
                 gallery.loadPhotos(gallery.currentFolder.id);
             } else {
                 alert('Ошибка при удалении');
             }
-        } catch (e) {
+        }).catch(function(e) {
             alert('Ошибка при удалении');
-        }
+        });
     }
 };
 
@@ -237,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Enter в поле пароля
-    const passwordInput = document.getElementById('admin-password');
+    var passwordInput = document.getElementById('admin-password');
     if (passwordInput) {
         passwordInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') admin.login();
