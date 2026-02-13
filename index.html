@@ -82,12 +82,26 @@
         </div>
     </div>
 
-    <!-- СТРАНИЦА ПАПКИ -->
+        <!-- СТРАНИЦА ПАПКИ -->
     <div id="folder-page" style="display:none;">
+        <!-- Узкая полоска сверху -->
         <div class="folder-cover-strip">
             <div class="folder-cover-strip__image"></div>
         </div>
         
+        <!-- Админ-панель для папки (скрыта по умолчанию) -->
+        <div id="folder-admin-panel" class="admin-panel" style="display:none;">
+            <div class="t-container">
+                <div class="t-col t-col_12">
+                    <button class="admin-btn" onclick="admin.uploadPhoto()">+ Загрузить фото</button>
+                    <input type="file" id="photo-upload" multiple accept="image/*" style="display:none;" onchange="admin.handlePhotoUpload(this)">
+                    <button class="admin-btn" onclick="admin.renameFolder()">Переименовать</button>
+                    <button class="admin-btn danger" onclick="admin.deleteFolder()">Удалить папку</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Контент папки: сайдбар + фото -->
         <div class="folder-content">
             <div class="folder-sidebar">
                 <a href="#" class="back-link" onclick="gallery.showMainPage(); return false;">
