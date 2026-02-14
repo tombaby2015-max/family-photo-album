@@ -1,18 +1,18 @@
 var gallery = {
     folders: [],
-    currentPhotos: [],
+    currentPhotos: [],        // Все фото папки (включая скрытые для админа)
+    visiblePhotos: [],        // Только видимые фото (для навигации)
     currentFolder: null,
     currentPhotoIndex: 0,
-    editingFolder: null, // Папка в режиме редактирования превью
-    previewState: { x: 50, y: 50, scale: 100 }, // Текущее состояние превью
+    editingFolder: null,
+    previewState: { x: 50, y: 50, scale: 100 },
+    keyHandler: null,         // Добавляем сюда для правильного удаления
 
     init: function() {
         var self = this;
-        // Проверяем hash при загрузке
         var hash = window.location.hash;
         if (hash && hash.indexOf('folder=') !== -1) {
             var folderId = hash.split('folder=')[1];
-            // Загружаем папки и открываем нужную
             api.getFolders().then(function(folders) {
                 self.folders = folders;
                 var folder = null;
@@ -62,7 +62,6 @@ var gallery = {
                 }).join('');
             }
             
-            // Инициализируем drag & drop если админ
             if (isAdmin && typeof admin !== 'undefined') {
                 admin.initSortable();
             }
@@ -72,7 +71,6 @@ var gallery = {
                     var card = document.getElementById('folder-' + folder.id);
                     if (card) {
                         card.onclick = function(e) {
-                            // Если в режиме редактирования, не открывать папку
                             if (self.editingFolder) return;
                             if (e.target.closest('.folder-card__admin-actions')) return;
                             if (e.target.closest('.preview-editor')) return;
@@ -89,7 +87,6 @@ var gallery = {
         var isEditing = this.editingFolder === folder.id;
         var hiddenClass = folder.hidden ? 'hidden-folder' : '';
         
-        // Формируем стиль фона с позицией и масштабом
         var bgStyle = this.getFolderBackgroundStyle(folder);
         
         var adminActions = '';
@@ -102,7 +99,6 @@ var gallery = {
             '</div>';
         }
         
-        // Редактор превью (появляется при редактировании)
         var previewEditor = '';
         if (isEditing) {
             previewEditor = '<div class="preview-editor">' +
@@ -128,7 +124,6 @@ var gallery = {
     getFolderBackgroundStyle: function(folder) {
         var imageUrl = folder.cover_url || 'https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg';
         
-        // Если редактируем эту папку, используем текущее состояние
         if (this.editingFolder === folder.id) {
             var x = this.previewState.x;
             var y = this.previewState.y;
@@ -136,7 +131,6 @@ var gallery = {
             return 'background-image: url(\'' + imageUrl + '\'); background-position: ' + x + '% ' + y + '%; background-size: ' + scale + '%;';
         }
         
-        // Иначе используем сохраненные значения
         var x = folder.cover_x !== undefined ? folder.cover_x : 50;
         var y = folder.cover_y !== undefined ? folder.cover_y : 50;
         var scale = folder.cover_scale !== undefined ? folder.cover_scale : 100;
@@ -144,7 +138,6 @@ var gallery = {
         return 'background-image: url(\'' + imageUrl + '\'); background-position: ' + x + '% ' + y + '%; background-size: ' + scale + '%;';
     },
 
-    // Начать редактирование превью
     startEditPreview: function(folderId) {
         var folder = null;
         for (var i = 0; i < this.folders.length; i++) {
@@ -155,7 +148,6 @@ var gallery = {
         }
         if (!folder) return;
         
-        // Если нет превью, предупреждаем
         if (!folder.cover_url) {
             alert('Сначала выберите фото для превью папки (зайдите в папку и нажмите "Превью папки" на фото)');
             return;
@@ -171,20 +163,17 @@ var gallery = {
         this.loadFolders();
     },
 
-    // Сдвинуть превью
     movePreview: function(dx, dy) {
         this.previewState.x = Math.max(0, Math.min(100, this.previewState.x + dx));
         this.previewState.y = Math.max(0, Math.min(100, this.previewState.y + dy));
         this.updatePreviewDisplay();
     },
 
-    // Изменить масштаб
     zoomPreview: function(delta) {
         this.previewState.scale = Math.max(50, Math.min(200, this.previewState.scale + delta));
         this.updatePreviewDisplay();
     },
 
-    // Обновить отображение превью
     updatePreviewDisplay: function() {
         var imageEl = document.getElementById('folder-image-' + this.editingFolder);
         if (imageEl) {
@@ -193,7 +182,6 @@ var gallery = {
         }
     },
 
-    // Сохранить превью
     savePreview: function() {
         var self = this;
         var folderId = this.editingFolder;
@@ -204,7 +192,6 @@ var gallery = {
             cover_scale: this.previewState.scale
         }).then(function(result) {
             if (result) {
-                // Обновляем локальные данные
                 for (var i = 0; i < self.folders.length; i++) {
                     if (self.folders[i].id === folderId) {
                         self.folders[i].cover_x = self.previewState.x;
@@ -242,15 +229,12 @@ var gallery = {
         if (mainFooter) mainFooter.style.display = 'none';
         if (folderPage) folderPage.style.display = 'block';
         
-        // Внутри папки всегда показываем оригинальное фото (не превью)
         if (coverImage) {
             coverImage.style.backgroundImage = "url('https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg')";
         }
         
-        // Устанавливаем название папки под полоской
         if (titleText) titleText.textContent = folder.title;
         
-        // Показываем админ-кнопки в сайдбаре если админ
         if (sidebarButtons) {
             sidebarButtons.style.display = api.isAdmin() ? 'flex' : 'none';
         }
@@ -260,8 +244,13 @@ var gallery = {
     },
 
     showMainPage: function() {
-        // Выходим из режима редактирования если был
         this.editingFolder = null;
+        
+        // Удаляем обработчик клавиш при выходе из папки
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+            this.keyHandler = null;
+        }
         
         window.location.hash = '';
         
@@ -277,6 +266,7 @@ var gallery = {
         
         this.currentFolder = null;
         this.currentPhotos = [];
+        this.visiblePhotos = [];
         
         if (coverSection) {
             window.scrollTo(0, coverSection.offsetHeight);
@@ -292,21 +282,22 @@ var gallery = {
         api.getPhotos(folderId).then(function(photos) {
             self.currentPhotos = photos;
             
+            // Создаем отфильтрованный массив только для отображения
             var isAdmin = api.isAdmin();
-            var visiblePhotos = [];
+            self.visiblePhotos = [];
             for (var i = 0; i < photos.length; i++) {
                 if (isAdmin || !photos[i].hidden) {
-                    visiblePhotos.push(photos[i]);
+                    self.visiblePhotos.push(photos[i]);
                 }
             }
             
-            if (visiblePhotos.length === 0) {
+            if (self.visiblePhotos.length === 0) {
                 if (grid) grid.innerHTML = '<div class="empty-state"><h4>В этой папке пока нет фото</h4></div>';
                 return;
             }
             
             if (grid) {
-                grid.innerHTML = visiblePhotos.map(function(photo, index) {
+                grid.innerHTML = self.visiblePhotos.map(function(photo, index) {
                     return self.createPhotoItem(photo, index);
                 }).join('');
             }
@@ -332,36 +323,32 @@ var gallery = {
     },
 
     openFullscreen: function(index) {
-        var isAdmin = api.isAdmin();
-        var visiblePhotos = [];
-        for (var i = 0; i < this.currentPhotos.length; i++) {
-            if (isAdmin || !this.currentPhotos[i].hidden) {
-                visiblePhotos.push(this.currentPhotos[i]);
-            }
-        }
-        this.currentPhotos = visiblePhotos;
-        
-        if (index < 0 || index >= this.currentPhotos.length) return;
+        if (index < 0 || index >= this.visiblePhotos.length) return;
         
         this.currentPhotoIndex = index;
-        var photo = this.currentPhotos[index];
+        var photo = this.visiblePhotos[index];
         
         var img = document.getElementById('fullscreen-image');
         var link = document.getElementById('download-link');
         var viewer = document.getElementById('fullscreen-viewer');
         
-        // Показываем/скрываем кнопки админа
         var btnCover = document.getElementById('btn-set-cover');
         var btnDelete = document.getElementById('btn-delete-photo');
         
-        if (btnCover) btnCover.style.display = isAdmin ? 'inline-block' : 'none';
-        if (btnDelete) btnDelete.style.display = isAdmin ? 'inline-block' : 'none';
+        if (btnCover) btnCover.style.display = api.isAdmin() ? 'inline-block' : 'none';
+        if (btnDelete) btnDelete.style.display = api.isAdmin() ? 'inline-block' : 'none';
         
         if (img) img.src = photo.url;
         if (link) link.href = photo.url;
         if (viewer) viewer.style.display = 'flex';
         
         var self = this;
+        
+        // Удаляем старый обработчик если есть
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+        }
+        
         this.keyHandler = function(e) {
             if (e.key === 'Escape') {
                 self.closeFullscreen();
@@ -379,6 +366,7 @@ var gallery = {
         if (viewer) viewer.style.display = 'none';
         if (this.keyHandler) {
             document.removeEventListener('keydown', this.keyHandler);
+            this.keyHandler = null;
         }
     },
 
@@ -389,7 +377,7 @@ var gallery = {
     },
 
     nextPhoto: function() {
-        if (this.currentPhotoIndex < this.currentPhotos.length - 1) {
+        if (this.currentPhotoIndex < this.visiblePhotos.length - 1) {
             this.openFullscreen(this.currentPhotoIndex + 1);
         }
     }
