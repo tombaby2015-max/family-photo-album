@@ -294,7 +294,7 @@ var gallery = {
         this.currentPage = page;
         
         // Запрашиваем фото с пагинацией
-        fetch(api.API_BASE + '/photos?folder_id=' + folderId + '&page=' + page + '&limit=' + this.photosPerPage)
+                fetch(API_BASE + '/photos?folder_id=' + folderId + '&page=' + page + '&limit=' + this.photosPerPage)
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 var photos = data.photos || [];
