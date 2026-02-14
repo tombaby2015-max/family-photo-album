@@ -1,15 +1,12 @@
 var gallery = {
     folders: [],
-    currentPhotos: [],        
-    visiblePhotos: [],        
+    currentPhotos: [],
+    visiblePhotos: [],
     currentFolder: null,
     currentPhotoIndex: 0,
     editingFolder: null,
     previewState: { x: 50, y: 50, scale: 100 },
     keyHandler: null,
-    currentPage: 1,           // Текущая страница
-    hasMorePhotos: false,     // Есть ли еще фото
-    photosPerPage: 30,        // По 30 фото на страницу
 
     init: function() {
         var self = this;
@@ -218,8 +215,6 @@ var gallery = {
             window.location.hash = 'folder=' + folder.id;
         }
         this.currentFolder = folder;
-        this.currentPage = 1;      // Сбрасываем на первую страницу
-        this.visiblePhotos = [];   // Очищаем фото
         
         var coverSection = document.getElementById('cover-section');
         var mainPage = document.getElementById('main-page');
@@ -244,7 +239,7 @@ var gallery = {
             sidebarButtons.style.display = api.isAdmin() ? 'flex' : 'none';
         }
         
-        this.loadPhotos(folder.id, 1);
+        this.loadPhotos(folder.id);
         window.scrollTo(0, 0);
     },
 
@@ -271,8 +266,6 @@ var gallery = {
         this.currentFolder = null;
         this.currentPhotos = [];
         this.visiblePhotos = [];
-        this.currentPage = 1;
-        this.hasMorePhotos = false;
         
         if (coverSection) {
             window.scrollTo(0, coverSection.offsetHeight);
@@ -280,82 +273,33 @@ var gallery = {
         this.loadFolders();
     },
 
-    // НОВАЯ ФУНКЦИЯ с пагинацией
-       loadPhotos: function(folderId, page) {
+    loadPhotos: function(folderId) {
         var self = this;
         var grid = document.getElementById('photos-grid');
+        if (grid) grid.innerHTML = '<div class="loading">Загрузка фото...</div>';
         
-        if (page === 1) {
-            if (grid) grid.innerHTML = '<div class="loading">Загрузка фото...</div>';
-            this.visiblePhotos = [];
-        }
-        
-        this.currentPage = page;
-        
-        // Прямой URL к API
-        fetch('https://photo-app-backend.belovolov-email.workers.dev/photos?folder_id=' + folderId + '&page=' + page + '&limit=' + this.photosPerPage)
-            .then(function(response) { 
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json(); 
-            })
-            .then(function(data) {
-                var photos = data.photos || [];
-                var pagination = data.pagination || {};
-                
-                self.hasMorePhotos = pagination.hasMore || false;
-                
-                var isAdmin = api.isAdmin();
-                var newPhotos = [];
-                for (var i = 0; i < photos.length; i++) {
-                    if (isAdmin || !photos[i].hidden) {
-                        newPhotos.push(photos[i]);
-                    }
+        api.getPhotos(folderId).then(function(photos) {
+            self.currentPhotos = photos;
+            
+            var isAdmin = api.isAdmin();
+            self.visiblePhotos = [];
+            for (var i = 0; i < photos.length; i++) {
+                if (isAdmin || !photos[i].hidden) {
+                    self.visiblePhotos.push(photos[i]);
                 }
-                
-                self.visiblePhotos = self.visiblePhotos.concat(newPhotos);
-                
-                if (page === 1 && self.visiblePhotos.length === 0) {
-                    if (grid) grid.innerHTML = '<div class="empty-state"><h4>В этой папке пока нет фото</h4></div>';
-                    return;
-                }
-                
-                if (page === 1) {
-                    if (grid) grid.innerHTML = '';
-                } else {
-                    var oldBtn = document.getElementById('load-more-btn');
-                    if (oldBtn) oldBtn.remove();
-                }
-                
-                for (var j = 0; j < newPhotos.length; j++) {
-                    var photo = newPhotos[j];
-                    var index = self.visiblePhotos.length - newPhotos.length + j;
-                    var photoHtml = self.createPhotoItem(photo, index);
-                    
-                    var div = document.createElement('div');
-                    div.innerHTML = photoHtml;
-                    if (grid) grid.appendChild(div.firstChild);
-                }
-                
-                if (self.hasMorePhotos && grid) {
-                    var loadMoreBtn = document.createElement('div');
-                    loadMoreBtn.id = 'load-more-btn';
-                    loadMoreBtn.className = 'load-more-container';
-                    loadMoreBtn.innerHTML = '<button class="load-more-btn" onclick="gallery.loadMorePhotos()">Загрузить еще</button>';
-                    grid.appendChild(loadMoreBtn);
-                }
-            })
-            .catch(function(error) {
-                console.error('Error loading photos:', error);
-                if (page === 1 && grid) {
-                    grid.innerHTML = '<div class="empty-state"><h4>Ошибка загрузки фото</h4></div>';
-                }
-            });
-    },
-
-    // НОВАЯ ФУНКЦИЯ — подгрузить еще
-    loadMorePhotos: function() {
-        if (!this.currentFolder) return;
-        this.loadPhotos(this.currentFolder.id, this.currentPage + 1);
+            }
+            
+            if (self.visiblePhotos.length === 0) {
+                if (grid) grid.innerHTML = '<div class="empty-state"><h4>В этой папке пока нет фото</h4></div>';
+                return;
+            }
+            
+            if (grid) {
+                grid.innerHTML = self.visiblePhotos.map(function(photo, index) {
+                    return self.createPhotoItem(photo, index);
+                }).join('');
+            }
+        });
     },
 
     createPhotoItem: function(photo, index) {
