@@ -1,6 +1,6 @@
 var admin = {
     inactivityTimer: null,
-    inactivityTimeout: 20 * 60 * 1000, // 20 минут в миллисекундах
+    inactivityTimeout: 20 * 60 * 1000,
     isAdminActive: false,
 
     openModal: function() {
@@ -51,9 +51,7 @@ var admin = {
     },
 
     logout: function() {
-        // Делаем бэкап перед выходом
         this.createBackup('Выход из админки');
-        
         api.logout();
         this.hideAdminUI();
         this.stopInactivityTimer();
@@ -83,7 +81,6 @@ var admin = {
         gallery.loadFolders();
     },
 
-    // Таймер бездействия
     startInactivityTimer: function() {
         this.stopInactivityTimer();
         var self = this;
@@ -109,12 +106,9 @@ var admin = {
         }
     },
 
-    // Защита от закрытия вкладки
     setupBeforeUnload: function() {
         var self = this;
         window.addEventListener('beforeunload', this.beforeUnloadHandler);
-        
-        // Отслеживаем активность для сброса таймера
         document.addEventListener('click', function() { self.resetInactivityTimer(); });
         document.addEventListener('keypress', function() { self.resetInactivityTimer(); });
         document.addEventListener('scroll', function() { self.resetInactivityTimer(); });
@@ -126,36 +120,27 @@ var admin = {
 
     beforeUnloadHandler: function(e) {
         if (admin.isAdminActive) {
-            // Делаем бэкап через sendBeacon (единственный способ при закрытии)
-            if (navigator.sendBeacon) {
-                var data = JSON.stringify({ 
-                    reason: 'Автобэкап при закрытии вкладки',
-                    token: api.getToken()
-                });
-                var blob = new Blob([data], { type: 'application/json' });
-                navigator.sendBeacon(API_BASE + '/admin/backup', blob);
-            }
-            
-            // Показываем стандартное сообщение браузера
+            admin.createBackup('Закрытие вкладки');
             e.preventDefault();
-            e.returnValue = 'Вы в админке. Выйти и создать бэкап?';
+            e.returnValue = 'Вы в админке. Выйти?';
             return e.returnValue;
         }
     },
 
-    // Создание бэкапа
     createBackup: function(reason) {
-        var self = this;
+        var token = api.getToken();
+        if (!token) {
+            console.error('No token for backup');
+            return;
+        }
         
-        // Используем sendBeacon если доступен (для закрытия вкладки)
+        var data = JSON.stringify({ 
+            reason: reason || 'Ручной бэкап',
+            token: token
+        });
+        
         if (navigator.sendBeacon) {
-            var data = JSON.stringify({ 
-                reason: reason || 'Ручной бэкап',
-                token: api.getToken()
-            });
             var blob = new Blob([data], { type: 'application/json' });
-            
-            // Пробуем sendBeacon (работает при закрытии вкладки)
             var success = navigator.sendBeacon(API_BASE + '/admin/backup', blob);
             if (success) {
                 console.log('Бэкап отправлен через sendBeacon:', reason);
@@ -163,46 +148,49 @@ var admin = {
             }
         }
         
-        // Fallback: обычный fetch
         fetch(API_BASE + '/admin/backup', {
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer ' + api.getToken(),
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ reason: reason || 'Ручной бэкап' })
+            body: data
         })
         .then(function(response) { return response.json(); })
         .then(function(result) {
             if (result.success) {
-                console.log('Бэкап создан:', result.timestamp, 'Причина:', reason);
-            } else {
-                console.error('Ошибка бэкапа:', result.error);
+                console.log('Бэкап создан:', result.timestamp);
             }
         })
         .catch(function(error) {
-            console.error('Ошибка создания бэкапа:', error);
+            console.error('Ошибка бэкапа:', error);
         });
     },
 
-    // Ручной бэкап с уведомлением
     manualBackup: function() {
         var self = this;
+        var token = api.getToken();
+        
+        if (!token) {
+            alert('Ошибка: не авторизован');
+            return;
+        }
         
         fetch(API_BASE + '/admin/backup', {
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer ' + api.getToken(),
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ reason: 'Ручной бэкап по кнопке' })
+            body: JSON.stringify({ 
+                reason: 'Ручной бэкап по кнопке',
+                token: token
+            })
         })
         .then(function(response) { return response.json(); })
         .then(function(result) {
             if (result.success) {
-                alert('✅ Бэкап создан!\n🕐 ' + result.timestamp + '\n📁 Папок: ' + result.folders + '\n📷 Фото: ' + result.photos + '\n\nОтправлен в тему "Бэкап" в Telegram');
+                alert('✅ Бэкап создан!\n🕐 ' + result.timestamp + '\n📁 Папок: ' + result.folders + '\n📷 Фото: ' + result.photos);
             } else {
-                alert('❌ Ошибка создания бэкапа: ' + (result.error || 'Unknown error'));
+                alert('❌ Ошибка: ' + (result.error || 'Unknown error'));
             }
         })
         .catch(function(error) {
@@ -210,7 +198,6 @@ var admin = {
         });
     },
 
-    // Drag & Drop сортировка папок
     initSortable: function() {
         var container = document.getElementById('folders-container');
         if (!container || !api.isAdmin()) return;
@@ -314,7 +301,7 @@ var admin = {
         var id = folderId || (gallery.currentFolder ? gallery.currentFolder.id : null);
         if (!id) return;
         
-        if (!confirm('Удалить папку? Все фото в ней будут удалены. Это действие нельзя отменить.')) return;
+        if (!confirm('Удалить папку? Все фото в ней будут удалены.')) return;
         
         var self = this;
         api.deleteFolder(id).then(function(result) {
@@ -356,15 +343,12 @@ var admin = {
         if (grid) grid.innerHTML = '<div class="loading">Загрузка: 0/' + total + '...</div>';
         
         var self = this;
-        
-        // Делаем бэкап перед началом загрузки
         this.createBackup('Начало загрузки ' + total + ' фото');
         
         function uploadNext(index) {
             if (index >= files.length) {
                 gallery.loadPhotos(folderId).then(function() {
-                    // Бэкап после завершения всех загрузок
-                    self.createBackup('Завершена загрузка фото: ' + uploaded + ' успешно');
+                    self.createBackup('Завершена загрузка: ' + uploaded + ' фото');
                     if (failed > 0) {
                         alert('Загружено: ' + uploaded + ', Ошибок: ' + failed);
                     } else {
@@ -458,7 +442,7 @@ var admin = {
     },
 
     deletePhoto: function(photoId) {
-        if (!confirm('Удалить фото? Это действие нельзя отменить.')) return;
+        if (!confirm('Удалить фото?')) return;
         
         var self = this;
         api.deletePhoto(photoId).then(function(result) {
