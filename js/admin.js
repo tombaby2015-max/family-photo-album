@@ -126,7 +126,17 @@ var admin = {
 
     beforeUnloadHandler: function(e) {
         if (admin.isAdminActive) {
-            // Стандартное сообщение браузера (современные браузеры показывают свои тексты)
+            // Делаем бэкап через sendBeacon (единственный способ при закрытии)
+            if (navigator.sendBeacon) {
+                var data = JSON.stringify({ 
+                    reason: 'Автобэкап при закрытии вкладки',
+                    token: api.getToken()
+                });
+                var blob = new Blob([data], { type: 'application/json' });
+                navigator.sendBeacon(API_BASE + '/admin/backup', blob);
+            }
+            
+            // Показываем стандартное сообщение браузера
             e.preventDefault();
             e.returnValue = 'Вы в админке. Выйти и создать бэкап?';
             return e.returnValue;
@@ -137,6 +147,23 @@ var admin = {
     createBackup: function(reason) {
         var self = this;
         
+        // Используем sendBeacon если доступен (для закрытия вкладки)
+        if (navigator.sendBeacon) {
+            var data = JSON.stringify({ 
+                reason: reason || 'Ручной бэкап',
+                token: api.getToken()
+            });
+            var blob = new Blob([data], { type: 'application/json' });
+            
+            // Пробуем sendBeacon (работает при закрытии вкладки)
+            var success = navigator.sendBeacon(API_BASE + '/admin/backup', blob);
+            if (success) {
+                console.log('Бэкап отправлен через sendBeacon:', reason);
+                return;
+            }
+        }
+        
+        // Fallback: обычный fetch
         fetch(API_BASE + '/admin/backup', {
             method: 'POST',
             headers: {
@@ -330,10 +357,14 @@ var admin = {
         
         var self = this;
         
+        // Делаем бэкап перед началом загрузки
+        this.createBackup('Начало загрузки ' + total + ' фото');
+        
         function uploadNext(index) {
             if (index >= files.length) {
                 gallery.loadPhotos(folderId).then(function() {
-                    self.createBackup('Загрузка ' + uploaded + ' фото');
+                    // Бэкап после завершения всех загрузок
+                    self.createBackup('Завершена загрузка фото: ' + uploaded + ' успешно');
                     if (failed > 0) {
                         alert('Загружено: ' + uploaded + ', Ошибок: ' + failed);
                     } else {
