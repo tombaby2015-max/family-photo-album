@@ -118,9 +118,8 @@ var admin = {
         window.removeEventListener('beforeunload', this.beforeUnloadHandler);
     },
 
-    beforeUnloadHandler: function(e) {
+       beforeUnloadHandler: function(e) {
         if (admin.isAdminActive) {
-            admin.createBackup('Закрытие вкладки');
             e.preventDefault();
             e.returnValue = 'Вы в админке. Выйти?';
             return e.returnValue;
@@ -134,35 +133,26 @@ var admin = {
             return;
         }
         
-        var data = JSON.stringify({ 
-            reason: reason || 'Ручной бэкап',
-            token: token
-        });
-        
-        if (navigator.sendBeacon) {
-            var blob = new Blob([data], { type: 'application/json' });
-            var success = navigator.sendBeacon(API_BASE + '/admin/backup', blob);
-            if (success) {
-                console.log('Бэкап отправлен через sendBeacon:', reason);
-                return;
-            }
-        }
-        
         fetch(API_BASE + '/admin/backup', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
             },
-            body: data
+            body: JSON.stringify({ 
+                reason: reason || 'Ручной бэкап'
+            })
         })
         .then(function(response) { return response.json(); })
         .then(function(result) {
             if (result.success) {
-                console.log('Бэкап создан:', result.timestamp);
+                console.log('✅ Бэкап создан:', result.timestamp, '-', reason);
+            } else {
+                console.error('❌ Ошибка бэкапа:', result.error);
             }
         })
         .catch(function(error) {
-            console.error('Ошибка бэкапа:', error);
+            console.error('❌ Ошибка бэкапа:', error);
         });
     },
 
@@ -178,11 +168,11 @@ var admin = {
         fetch(API_BASE + '/admin/backup', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
             },
             body: JSON.stringify({ 
-                reason: 'Ручной бэкап по кнопке',
-                token: token
+                reason: 'Ручной бэкап по кнопке'
             })
         })
         .then(function(response) { return response.json(); })
