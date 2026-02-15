@@ -1,6 +1,6 @@
 var admin = {
     inactivityTimer: null,
-    inactivityTimeout: 1 * 60 * 1000,
+    inactivityTimeout: 15 * 60 * 1000,
     isAdminActive: false,
 
     openModal: function() {
