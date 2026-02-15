@@ -193,6 +193,51 @@ var admin = {
         });
     },
 
+    // Синхронизация с Telegram (очистка мёртвых ID)
+    syncStorage: function() {
+        var self = this;
+        var token = api.getToken();
+        
+        if (!token) {
+            alert('Ошибка: не авторизован');
+            return;
+        }
+        
+        if (!confirm('Проверить хранилище?\n\nБудет проверено:\n- Существуют ли темы в Telegram\n- Существуют ли фото в Telegram\n\nУдалённые данные будут стёрты из KV')) {
+            return;
+        }
+        
+        fetch(API_BASE + '/admin/sync', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            }
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(result) {
+            if (result.success) {
+                var msg = '✅ Проверка завершена!\n\n';
+                msg += '📁 Папок проверено: ' + result.foldersChecked + '\n';
+                msg += '🗑️ Папок удалено: ' + result.foldersRemoved + '\n\n';
+                msg += '📷 Фото проверено: ' + result.photosChecked + '\n';
+                msg += '🗑️ Фото удалено: ' + result.photosRemoved;
+                
+                if (result.errors.length > 0) {
+                    msg += '\n\n⚠️ Ошибок: ' + result.errors.length;
+                }
+                
+                alert(msg);
+                gallery.loadFolders();
+            } else {
+                alert('❌ Ошибка: ' + (result.error || 'Unknown error'));
+            }
+        })
+        .catch(function(error) {
+            alert('❌ Ошибка: ' + error.message);
+        });
+    },
+    
     initSortable: function() {
         var container = document.getElementById('folders-container');
         if (!container || !api.isAdmin()) return;
