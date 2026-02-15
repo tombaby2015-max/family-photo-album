@@ -118,7 +118,7 @@ var admin = {
         window.removeEventListener('beforeunload', this.beforeUnloadHandler);
     },
 
-       beforeUnloadHandler: function(e) {
+    beforeUnloadHandler: function(e) {
         if (admin.isAdminActive) {
             e.preventDefault();
             e.returnValue = 'Вы в админке. Выйти?';
@@ -234,7 +234,6 @@ var admin = {
         api.createFolder(title).then(function(result) {
             if (result && result.id) {
                 self.createBackup('Создание папки: ' + title);
-                alert('Папка создана!');
                 gallery.loadFolders();
             } else {
                 alert('Ошибка при создании папки');
@@ -336,11 +335,8 @@ var admin = {
         
         function uploadNext(index) {
             if (index >= files.length) {
-                // Все фото загружены, ждём 2 секунды чтобы KV точно обновился
                 setTimeout(function() {
-                    // Перезагружаем фото из KV (а не из кэша)
                     api.getPhotos(folderId).then(function(photos) {
-                        // Обновляем отображение
                         gallery.currentPhotos = photos;
                         var isAdmin = api.isAdmin();
                         gallery.visiblePhotos = [];
@@ -360,7 +356,6 @@ var admin = {
                             }
                         }
                         
-                        // Теперь делаем бэкап когда точно всё в KV
                         self.createBackup('Загрузка ' + uploaded + ' фото');
                         
                         if (failed > 0) {
@@ -369,7 +364,7 @@ var admin = {
                             alert('Успешно загружено ' + uploaded + ' фото!');
                         }
                     });
-                }, 2000); // 2 секунды на обновление KV
+                }, 2000);
                 
                 input.value = '';
                 return;
@@ -407,7 +402,6 @@ var admin = {
         api.updateFolder(folderId, { cover_url: photoUrl }).then(function(result) {
             if (result) {
                 gallery.currentFolder.cover_url = photoUrl;
-                alert('Превью папки обновлено!');
                 gallery.closeFullscreen();
                 gallery.loadFolders();
                 self.createBackup('Установка превью папки');
