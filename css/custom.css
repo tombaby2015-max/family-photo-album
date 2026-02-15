@@ -603,3 +603,21 @@
 .t-cover__arrow-wrapper {
     cursor: pointer;
 }
+
+/* Кнопка обновления */
+.refresh-btn {
+    background: transparent;
+    border: 1px solid rgba(0,0,0,0.3);
+    padding: 8px 24px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #666;
+    transition: all 0.3s;
+    margin-left: 10px;
+}
+.refresh-btn:hover {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+}
