@@ -1,4 +1,8 @@
 var admin = {
+    inactivityTimer: null,
+    inactivityTimeout: 20 * 60 * 1000, // 20 минут в миллисекундах
+    isAdminActive: false,
+
     openModal: function() {
         var modal = document.getElementById('admin-modal');
         var passwordInput = document.getElementById('admin-password');
@@ -35,6 +39,8 @@ var admin = {
             if (result.success) {
                 self.closeModal();
                 self.showAdminUI();
+                self.startInactivityTimer();
+                self.setupBeforeUnload();
                 gallery.loadFolders();
             } else {
                 if (errorEl) errorEl.textContent = result.error || 'Ошибка входа';
@@ -45,8 +51,13 @@ var admin = {
     },
 
     logout: function() {
+        // Делаем бэкап перед выходом
+        this.createBackup('Выход из админки');
+        
         api.logout();
         this.hideAdminUI();
+        this.stopInactivityTimer();
+        this.removeBeforeUnload();
         gallery.showMainPage();
     },
 
@@ -57,6 +68,7 @@ var admin = {
         if (adminPanel) adminPanel.style.display = 'block';
         if (folderAdminPanel) folderAdminPanel.style.display = 'flex';
         
+        this.isAdminActive = true;
         gallery.loadFolders();
     },
 
@@ -67,7 +79,108 @@ var admin = {
         if (adminPanel) adminPanel.style.display = 'none';
         if (folderAdminPanel) folderAdminPanel.style.display = 'none';
         
+        this.isAdminActive = false;
         gallery.loadFolders();
+    },
+
+    // Таймер бездействия
+    startInactivityTimer: function() {
+        this.stopInactivityTimer();
+        var self = this;
+        this.inactivityTimer = setTimeout(function() {
+            alert('Вы автоматически вышли из админки из-за бездействия (20 минут)');
+            self.createBackup('Автовыход из-за бездействия');
+            api.logout();
+            self.hideAdminUI();
+            gallery.showMainPage();
+        }, this.inactivityTimeout);
+    },
+
+    stopInactivityTimer: function() {
+        if (this.inactivityTimer) {
+            clearTimeout(this.inactivityTimer);
+            this.inactivityTimer = null;
+        }
+    },
+
+    resetInactivityTimer: function() {
+        if (this.isAdminActive) {
+            this.startInactivityTimer();
+        }
+    },
+
+    // Защита от закрытия вкладки
+    setupBeforeUnload: function() {
+        var self = this;
+        window.addEventListener('beforeunload', this.beforeUnloadHandler);
+        
+        // Отслеживаем активность для сброса таймера
+        document.addEventListener('click', function() { self.resetInactivityTimer(); });
+        document.addEventListener('keypress', function() { self.resetInactivityTimer(); });
+        document.addEventListener('scroll', function() { self.resetInactivityTimer(); });
+    },
+
+    removeBeforeUnload: function() {
+        window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+    },
+
+    beforeUnloadHandler: function(e) {
+        if (admin.isAdminActive) {
+            // Стандартное сообщение браузера (современные браузеры показывают свои тексты)
+            e.preventDefault();
+            e.returnValue = 'Вы в админке. Выйти и создать бэкап?';
+            return e.returnValue;
+        }
+    },
+
+    // Создание бэкапа
+    createBackup: function(reason) {
+        var self = this;
+        
+        fetch(API_BASE + '/admin/backup', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + api.getToken(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason: reason || 'Ручной бэкап' })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(result) {
+            if (result.success) {
+                console.log('Бэкап создан:', result.timestamp, 'Причина:', reason);
+            } else {
+                console.error('Ошибка бэкапа:', result.error);
+            }
+        })
+        .catch(function(error) {
+            console.error('Ошибка создания бэкапа:', error);
+        });
+    },
+
+    // Ручной бэкап с уведомлением
+    manualBackup: function() {
+        var self = this;
+        
+        fetch(API_BASE + '/admin/backup', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + api.getToken(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason: 'Ручной бэкап по кнопке' })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(result) {
+            if (result.success) {
+                alert('✅ Бэкап создан!\n🕐 ' + result.timestamp + '\n📁 Папок: ' + result.folders + '\n📷 Фото: ' + result.photos + '\n\nОтправлен в тему "Бэкап" в Telegram');
+            } else {
+                alert('❌ Ошибка создания бэкапа: ' + (result.error || 'Unknown error'));
+            }
+        })
+        .catch(function(error) {
+            alert('❌ Ошибка: ' + error.message);
+        });
     },
 
     // Drag & Drop сортировка папок
@@ -91,6 +204,7 @@ var admin = {
                     }
                 }
                 self.saveFoldersOrder(newOrder);
+                self.createBackup('Изменение порядка папок');
             }
         });
     },
@@ -112,8 +226,10 @@ var admin = {
         var title = prompt('Введите название папки:');
         if (!title) return;
         
+        var self = this;
         api.createFolder(title).then(function(result) {
             if (result && result.id) {
+                self.createBackup('Создание папки: ' + title);
                 alert('Папка создана!');
                 gallery.loadFolders();
             } else {
@@ -133,6 +249,7 @@ var admin = {
         var newTitle = prompt('Новое название:', title);
         if (!newTitle || newTitle === title) return;
         
+        var self = this;
         api.updateFolder(id, { title: newTitle }).then(function(result) {
             if (result) {
                 if (gallery.currentFolder && gallery.currentFolder.id === id) {
@@ -140,6 +257,7 @@ var admin = {
                     var titleText = document.getElementById('folder-title-text');
                     if (titleText) titleText.textContent = newTitle;
                 }
+                self.createBackup('Переименование папки: ' + newTitle);
                 gallery.loadFolders();
             } else {
                 alert('Ошибка при переименовании');
@@ -152,8 +270,10 @@ var admin = {
     toggleFolderHidden: function(folderId, hidden) {
         if (!confirm(hidden ? 'Скрыть папку?' : 'Показать папку?')) return;
         
+        var self = this;
         api.updateFolder(folderId, { hidden: hidden }).then(function(result) {
             if (result) {
+                self.createBackup((hidden ? 'Скрытие' : 'Показ') + ' папки');
                 gallery.loadFolders();
             } else {
                 alert('Ошибка');
@@ -169,8 +289,10 @@ var admin = {
         
         if (!confirm('Удалить папку? Все фото в ней будут удалены. Это действие нельзя отменить.')) return;
         
+        var self = this;
         api.deleteFolder(id).then(function(result) {
             if (result) {
+                self.createBackup('Удаление папки');
                 if (gallery.currentFolder && gallery.currentFolder.id === id) {
                     gallery.showMainPage();
                 } else {
@@ -211,6 +333,7 @@ var admin = {
         function uploadNext(index) {
             if (index >= files.length) {
                 gallery.loadPhotos(folderId).then(function() {
+                    self.createBackup('Загрузка ' + uploaded + ' фото');
                     if (failed > 0) {
                         alert('Загружено: ' + uploaded + ', Ошибок: ' + failed);
                     } else {
@@ -242,7 +365,6 @@ var admin = {
         uploadNext(0);
     },
 
-    // Установить текущее фото как превью папки
     setFolderCover: function() {
         var img = document.getElementById('fullscreen-image');
         if (!img || !img.src || !gallery.currentFolder) return;
@@ -250,16 +372,14 @@ var admin = {
         var photoUrl = img.src;
         var folderId = gallery.currentFolder.id;
         
+        var self = this;
         api.updateFolder(folderId, { cover_url: photoUrl }).then(function(result) {
             if (result) {
-                // Обновляем локально
                 gallery.currentFolder.cover_url = photoUrl;
-                
-                alert('Превью папки обновлено! Теперь вы можете отредактировать положение фото на главной странице (кнопка 🖼️ на папке)');
+                alert('Превью папки обновлено!');
                 gallery.closeFullscreen();
-                
-                // Обновляем отображение в списке папок на главной
                 gallery.loadFolders();
+                self.createBackup('Установка превью папки');
             } else {
                 alert('Ошибка обновления превью');
             }
@@ -268,7 +388,6 @@ var admin = {
         });
     },
 
-    // Удалить текущее фото из fullscreen
     deleteCurrentPhoto: function() {
         if (gallery.currentPhotos.length === 0 || gallery.currentPhotoIndex < 0) return;
         
@@ -277,8 +396,10 @@ var admin = {
         
         if (!confirm('Удалить это фото?')) return;
         
+        var self = this;
         api.deletePhoto(photo.id).then(function(result) {
             if (result && gallery.currentFolder) {
+                self.createBackup('Удаление фото');
                 gallery.closeFullscreen();
                 gallery.loadPhotos(gallery.currentFolder.id);
             } else {
@@ -292,8 +413,10 @@ var admin = {
     togglePhotoHidden: function(photoId, hidden) {
         if (!confirm(hidden ? 'Скрыть фото?' : 'Показать фото?')) return;
         
+        var self = this;
         api.updatePhoto(photoId, { hidden: hidden }).then(function(result) {
             if (result && gallery.currentFolder) {
+                self.createBackup((hidden ? 'Скрытие' : 'Показ') + ' фото');
                 gallery.loadPhotos(gallery.currentFolder.id);
             } else {
                 alert('Ошибка');
@@ -306,8 +429,10 @@ var admin = {
     deletePhoto: function(photoId) {
         if (!confirm('Удалить фото? Это действие нельзя отменить.')) return;
         
+        var self = this;
         api.deletePhoto(photoId).then(function(result) {
             if (result && gallery.currentFolder) {
+                self.createBackup('Удаление фото');
                 gallery.loadPhotos(gallery.currentFolder.id);
             } else {
                 alert('Ошибка при удалении');
@@ -321,6 +446,8 @@ var admin = {
 document.addEventListener('DOMContentLoaded', function() {
     if (api.isAdmin()) {
         admin.showAdminUI();
+        admin.startInactivityTimer();
+        admin.setupBeforeUnload();
     }
     
     var passwordInput = document.getElementById('admin-password');
