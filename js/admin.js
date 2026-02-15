@@ -85,7 +85,7 @@ var admin = {
         this.stopInactivityTimer();
         var self = this;
         this.inactivityTimer = setTimeout(function() {
-            alert('Вы автоматически вышли из админки из-за бездействия (20 минут)');
+            alert('Вы автоматически вышли из админки из-за бездействия ');
             self.createBackup('Автовыход из-за бездействия');
             api.logout();
             self.hideAdminUI();
