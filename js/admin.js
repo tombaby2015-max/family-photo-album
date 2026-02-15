@@ -1,6 +1,6 @@
 var admin = {
     inactivityTimer: null,
-    inactivityTimeout: 20 * 60 * 1000,
+    inactivityTimeout: 1 * 60 * 1000,
     isAdminActive: false,
 
     openModal: function() {
@@ -222,7 +222,7 @@ var admin = {
         Promise.all(promises).then(function() {
             console.log('Порядок сохранен');
         }).catch(function() {
-            alert('Ошибка сохранения порядка');
+            console.error('Ошибка сохранения порядка');
         });
     },
 
@@ -271,18 +271,17 @@ var admin = {
     },
 
     toggleFolderHidden: function(folderId, hidden) {
-        if (!confirm(hidden ? 'Скрыть папку?' : 'Показать папку?')) return;
-        
+        // УБРАЛИ confirm, действие сразу без подтверждения
         var self = this;
         api.updateFolder(folderId, { hidden: hidden }).then(function(result) {
             if (result) {
                 self.createBackup((hidden ? 'Скрытие' : 'Показ') + ' папки');
                 gallery.loadFolders();
             } else {
-                alert('Ошибка');
+                console.error('Ошибка скрытия папки');
             }
         }).catch(function(e) {
-            alert('Ошибка');
+            console.error('Ошибка');
         });
     },
 
@@ -358,11 +357,8 @@ var admin = {
                         
                         self.createBackup('Загрузка ' + uploaded + ' фото');
                         
-                        if (failed > 0) {
-                            alert('Загружено: ' + uploaded + ', Ошибок: ' + failed);
-                        } else {
-                            alert('Успешно загружено ' + uploaded + ' фото!');
-                        }
+                        // УБРАЛИ алерты успеха загрузки
+                        console.log('Загружено ' + uploaded + ' фото, ошибок: ' + failed);
                     });
                 }, 2000);
                 
@@ -406,10 +402,10 @@ var admin = {
                 gallery.loadFolders();
                 self.createBackup('Установка превью папки');
             } else {
-                alert('Ошибка обновления превью');
+                console.error('Ошибка обновления превью');
             }
         }).catch(function(e) {
-            alert('Ошибка обновления превью');
+            console.error('Ошибка обновления превью');
         });
     },
 
@@ -436,18 +432,17 @@ var admin = {
     },
 
     togglePhotoHidden: function(photoId, hidden) {
-        if (!confirm(hidden ? 'Скрыть фото?' : 'Показать фото?')) return;
-        
+        // УБРАЛИ confirm, действие сразу без подтверждения
         var self = this;
         api.updatePhoto(photoId, { hidden: hidden }).then(function(result) {
             if (result && gallery.currentFolder) {
                 self.createBackup((hidden ? 'Скрытие' : 'Показ') + ' фото');
                 gallery.loadPhotos(gallery.currentFolder.id);
             } else {
-                alert('Ошибка');
+                console.error('Ошибка');
             }
         }).catch(function(e) {
-            alert('Ошибка');
+            console.error('Ошибка');
         });
     },
 
