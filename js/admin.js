@@ -126,6 +126,11 @@ var admin = {
         }
     },
 
+    reloadPage: function() {
+        this.removeBeforeUnload();
+        location.reload(true);
+    },
+    
     createBackup: function(reason) {
         var token = api.getToken();
         if (!token) {
