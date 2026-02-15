@@ -333,12 +333,14 @@ var admin = {
         if (grid) grid.innerHTML = '<div class="loading">Загрузка: 0/' + total + '...</div>';
         
         var self = this;
-        this.createBackup('Начало загрузки ' + total + ' фото');
+        // УБРАЛИ бэкап в начале — он был здесь
         
         function uploadNext(index) {
             if (index >= files.length) {
+                // Все фото загружены, теперь обновляем список и делаем бэкап
                 gallery.loadPhotos(folderId).then(function() {
-                    self.createBackup('Завершена загрузка: ' + uploaded + ' фото');
+                    // Бэкап только после завершения всех загрузок
+                    self.createBackup('Загрузка ' + uploaded + ' фото');
                     if (failed > 0) {
                         alert('Загружено: ' + uploaded + ', Ошибок: ' + failed);
                     } else {
