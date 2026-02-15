@@ -333,20 +333,44 @@ var admin = {
         if (grid) grid.innerHTML = '<div class="loading">Загрузка: 0/' + total + '...</div>';
         
         var self = this;
-        // УБРАЛИ бэкап в начале — он был здесь
         
         function uploadNext(index) {
             if (index >= files.length) {
-                // Все фото загружены, теперь обновляем список и делаем бэкап
-                gallery.loadPhotos(folderId).then(function() {
-                    // Бэкап только после завершения всех загрузок
-                    self.createBackup('Загрузка ' + uploaded + ' фото');
-                    if (failed > 0) {
-                        alert('Загружено: ' + uploaded + ', Ошибок: ' + failed);
-                    } else {
-                        alert('Успешно загружено ' + uploaded + ' фото!');
-                    }
-                });
+                // Все фото загружены, ждём 2 секунды чтобы KV точно обновился
+                setTimeout(function() {
+                    // Перезагружаем фото из KV (а не из кэша)
+                    api.getPhotos(folderId).then(function(photos) {
+                        // Обновляем отображение
+                        gallery.currentPhotos = photos;
+                        var isAdmin = api.isAdmin();
+                        gallery.visiblePhotos = [];
+                        for (var i = 0; i < photos.length; i++) {
+                            if (isAdmin || !photos[i].hidden) {
+                                gallery.visiblePhotos.push(photos[i]);
+                            }
+                        }
+                        
+                        if (grid) {
+                            if (gallery.visiblePhotos.length === 0) {
+                                grid.innerHTML = '<div class="empty-state"><h4>В этой папке пока нет фото</h4></div>';
+                            } else {
+                                grid.innerHTML = gallery.visiblePhotos.map(function(photo, idx) {
+                                    return gallery.createPhotoItem(photo, idx);
+                                }).join('');
+                            }
+                        }
+                        
+                        // Теперь делаем бэкап когда точно всё в KV
+                        self.createBackup('Загрузка ' + uploaded + ' фото');
+                        
+                        if (failed > 0) {
+                            alert('Загружено: ' + uploaded + ', Ошибок: ' + failed);
+                        } else {
+                            alert('Успешно загружено ' + uploaded + ' фото!');
+                        }
+                    });
+                }, 2000); // 2 секунды на обновление KV
+                
                 input.value = '';
                 return;
             }
