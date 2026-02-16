@@ -50,10 +50,14 @@ var api = {
         this.clearToken();
     },
 
-    getFolders: function() {
-        return fetch(API_BASE + '/folders')
-            .then(function(response) { return response.json(); })
-            .catch(function() { return []; });
+    // Новая функция: получить папки с указанного места
+    getFolders: function(offset) {
+        offset = offset || 0;
+        return fetch(API_BASE + '/folders?offset=' + offset, {
+            headers: this.getHeaders(this.isAdmin())
+        })
+        .then(function(response) { return response.json(); })
+        .catch(function() { return { folders: [], hasMore: false, total: 0 }; });
     },
 
     createFolder: function(title) {
@@ -86,10 +90,14 @@ var api = {
           .catch(function() { return null; });
     },
 
-    getPhotos: function(folderId) {
-        return fetch(API_BASE + '/photos?folder_id=' + folderId)
-            .then(function(response) { return response.json(); })
-            .catch(function() { return []; });
+    // Новая функция: получить фото с указанного места
+    getPhotos: function(folderId, offset) {
+        offset = offset || 0;
+        return fetch(API_BASE + '/photos?folder_id=' + folderId + '&offset=' + offset, {
+            headers: this.getHeaders(this.isAdmin())
+        })
+        .then(function(response) { return response.json(); })
+        .catch(function() { return { photos: [], hasMore: false, total: 0 }; });
     },
 
     uploadPhoto: function(folderId, file) {
