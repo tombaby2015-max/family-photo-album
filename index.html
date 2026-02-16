@@ -53,12 +53,20 @@
 
     <!-- ГЛАВНАЯ СТРАНИЦА С ПАПКАМИ -->
     <div id="main-page">
+        <!-- АДМИН-ПАНЕЛЬ -->
         <div id="admin-panel" class="admin-panel" style="display:none;">
             <div class="t-container">
                 <div class="t-col t-col_12">
-                    <button class="admin-btn" onclick="admin.createFolder()">+ Создать папку</button>
-                    <button class="admin-btn" onclick="admin.manualBackup()">💾 Сделать бэкап</button>
-                    <button class="admin-btn logout" onclick="admin.logout()">Выйти</button>
+                    <div class="admin-panel__title">Панель администратора</div>
+                    <div class="admin-panel__buttons">
+                        <button class="admin-btn" onclick="admin.createFolder()">+ Создать папку</button>
+                        <button class="admin-btn" onclick="admin.manualBackup()">💾 Сделать бэкап</button>
+                        <button class="admin-btn" onclick="admin.restoreBackup()">📁 Восстановить из бэкапа</button>
+                        <button class="admin-btn" onclick="admin.syncStorage()">🧹 Очистить хранилище</button>
+                        <button class="admin-btn" onclick="admin.viewStorage()">👁️ Посмотреть хранилище</button>
+                        <button class="admin-btn" onclick="admin.reloadPage()">🔄 Обновить страницу</button>
+                        <button class="admin-btn logout" onclick="admin.logout()">Выйти</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -109,7 +117,7 @@
                 <!-- Админ-кнопки в сайдбаре -->
                 <div class="sidebar-admin-buttons" id="sidebar-admin-buttons" style="display:none;">
                     <button class="admin-btn" onclick="admin.uploadPhoto()">+ Загрузить фото</button>
-                    <input type="file" id="photo-upload" multiple accept="image/*" style="display:none;" onchange="admin.handlePhotoUpload(this)">
+                    <input type="file" id="photo-upload" multiple accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;" onchange="admin.handlePhotoUpload(this)">
                     <button class="admin-btn" onclick="admin.renameFolder()">Переименовать</button>
                     <button class="admin-btn danger" onclick="admin.deleteFolder()">Удалить папку</button>
                 </div>
@@ -155,11 +163,7 @@
 
         <!-- ФУТЕР -->
     <div id="main-footer" class="t-tildalabel t-tildalabel-free" style="padding: 20px; text-align: center; background:#fff;">
-        <button class="admin-btn" onclick="admin.syncStorage()">🧹 Очистить хранилище</button>
         <button class="admin-login-btn" onclick="admin.openModal()">Админ</button>
-        <button class="refresh-btn" onclick="admin.reloadPage()">🔄 Обновить</button>
-        <button class="admin-btn" onclick="admin.restoreBackup()">📁 Восстановить из бэкапа</button>
-        <button class="admin-btn" onclick="admin.viewStorage()">👁️ Посмотреть хранилище</button>
     </div>
 
     <!-- Скрипты -->
