@@ -154,7 +154,7 @@ var gallery = {
             }
         }
     },
-
+    
     loadMoreFolders: function() {
         var self = this;
         if (this.isLoadingMore || !this.foldersHasMore) return;
