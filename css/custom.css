@@ -621,3 +621,45 @@
     color: #fff;
     border-color: #000;
 }
+
+/* Стили для админ-панели */
+.admin-panel {
+    background: #f5f5f5;
+    padding: 20px 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+.admin-panel__title {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.admin-panel__buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.admin-panel__buttons .admin-btn {
+    width: auto;
+    min-width: 140px;
+    margin-bottom: 0;
+    font-size: 13px;
+    padding: 10px 20px;
+}
+
+/* Для Оперы - принудительно открывать выбор файла */
+#photo-upload {
+    position: absolute;
+    left: -9999px;
+    opacity: 0;
+}
