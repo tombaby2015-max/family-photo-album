@@ -366,6 +366,12 @@ var admin = {
         var container = document.getElementById('folders-container');
         if (!container || !api.isAdmin()) return;
         
+        // Проверяем, все ли папки загружены
+        if (!gallery.allFoldersLoaded()) {
+            // Не инициализируем сортировку, но не показываем алерт здесь
+            // Алерт покажем при попытке перетаскивания
+        }
+        
         var self = this;
         new Sortable(container, {
             animation: 150,
@@ -373,22 +379,17 @@ var admin = {
             ghostClass: 'sortable-ghost',
             dragClass: 'sortable-drag',
             onStart: function(evt) {
-                // Проверяем, все ли папки загружены
                 if (!gallery.allFoldersLoaded()) {
                     alert('Не все папки загружены, загрузите сначала все папки, потом сможете поменять их местами');
-                    evt.preventDefault(); // Отменяем перетаскивание
                     return false;
                 }
             },
             onEnd: function(evt) {
-                // Проверяем ещё раз на всякий случай
                 if (!gallery.allFoldersLoaded()) {
-                    alert('Не все папки загружены, загрузите сначала все папки, потом сможете поменять их местами');
-                    gallery.loadFolders(); // Перезагружаем чтобы восстановить порядок
                     return;
                 }
                 
-                var items = container.querySelectorAll('li.folder-card'); // Берем только карточки папок, без кнопки "Загрузить ещё"
+                var items = container.querySelectorAll('li.folder-card');
                 var newOrder = [];
                 for (var i = 0; i < items.length; i++) {
                     var id = items[i].getAttribute('data-id');
