@@ -50,7 +50,6 @@ var api = {
         this.clearToken();
     },
 
-    // Новая функция: получить папки с указанного места
     getFolders: function(offset) {
         offset = offset || 0;
         return fetch(API_BASE + '/folders?offset=' + offset, {
@@ -90,7 +89,6 @@ var api = {
           .catch(function() { return null; });
     },
 
-    // Новая функция: получить фото с указанного места
     getPhotos: function(folderId, offset) {
         offset = offset || 0;
         return fetch(API_BASE + '/photos?folder_id=' + folderId + '&offset=' + offset, {
