@@ -254,58 +254,104 @@ var admin = {
             return;
         }
         
+        // Создаём модальное окно для просмотра
+        var modal = document.getElementById('storage-viewer');
+        if (modal) modal.remove();
+        
+        modal = document.createElement('div');
+        modal.id = 'storage-viewer';
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:10002;overflow:auto;display:none;';
+        modal.innerHTML = 
+            '<div style="background:#fff;max-width:900px;margin:50px auto;padding:30px;border-radius:8px;position:relative;">' +
+                '<button onclick="document.getElementById(\'storage-viewer\').remove()" style="position:absolute;top:15px;right:15px;background:none;border:none;font-size:24px;cursor:pointer;">×</button>' +
+                '<h2 style="margin-top:0;">📦 Данные хранилища</h2>' +
+                '<div id="storage-content" style="font-family:monospace;font-size:13px;line-height:1.6;">' +
+                    '<p>Загрузка...</p>' +
+                '</div>' +
+            '</div>';
+        
+        document.body.appendChild(modal);
+        modal.style.display = 'block';
+        
         fetch(API_BASE + '/admin/storage-info', {
             headers: { 'Authorization': 'Bearer ' + token }
         })
         .then(function(r) { return r.json(); })
         .then(function(response) {
             if (!response.success) {
-                alert('Ошибка: ' + (response.error || 'Unknown error'));
+                document.getElementById('storage-content').innerHTML = '<p style="color:red;">Ошибка: ' + (response.error || 'Unknown error') + '</p>';
                 return;
             }
             
             var folders = response.folders || [];
             var photos = response.photos || [];
             
-            var msg = '📁 ПАПКИ (' + folders.length + '):\n\n';
+            var html = '';
+            
+            // ПАПКИ
+            html += '<h3 style="color:#333;border-bottom:2px solid #333;padding-bottom:10px;">📁 ПАПКИ (' + folders.length + ' шт.)</h3>';
+            html += '<table style="width:100%;border-collapse:collapse;margin-bottom:30px;">';
+            html += '<tr style="background:#f0f0f0;"><th style="padding:8px;text-align:left;border:1px solid #ddd;">№</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">ID</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">Название</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">Order</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">Topic ID</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">Скрыта</th></tr>';
+            
+            // Сортируем по order для наглядности
+            folders.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
             
             for (var i = 0; i < folders.length; i++) {
                 var f = folders[i];
-                msg += (i + 1) + '. ' + f.title + '\n';
-                msg += '   ID: ' + f.id + '\n';
-                msg += '   Topic: ' + f.topic_id + '\n\n';
+                html += '<tr>';
+                html += '<td style="padding:8px;border:1px solid #ddd;">' + (i + 1) + '</td>';
+                html += '<td style="padding:8px;border:1px solid #ddd;">' + f.id + '</td>';
+                html += '<td style="padding:8px;border:1px solid #ddd;">' + f.title + '</td>';
+                html += '<td style="padding:8px;border:1px solid #ddd;font-weight:bold;color:' + (f.order ? '#27ae60' : '#e74c3c') + ';">' + (f.order || 'НЕТ') + '</td>';
+                html += '<td style="padding:8px;border:1px solid #ddd;">' + f.topic_id + '</td>';
+                html += '<td style="padding:8px;border:1px solid #ddd;">' + (f.hidden ? '✓ Да' : 'Нет') + '</td>';
+                html += '</tr>';
             }
             
+            html += '</table>';
+            
+            // ФОТО
             var activePhotos = 0;
             var deletedPhotos = 0;
+            var hiddenPhotos = 0;
             
             for (var j = 0; j < photos.length; j++) {
-                if (photos[j].deleted) {
-                    deletedPhotos++;
-                } else {
-                    activePhotos++;
-                }
+                if (photos[j].deleted) deletedPhotos++;
+                else if (photos[j].hidden) hiddenPhotos++;
+                else activePhotos++;
             }
             
-            msg += '📷 ФОТО:\n';
-            msg += 'Активных: ' + activePhotos + '\n';
-            msg += 'Удалённых: ' + deletedPhotos + '\n';
-            msg += 'Всего записей: ' + photos.length + '\n\n';
+            html += '<h3 style="color:#333;border-bottom:2px solid #333;padding-bottom:10px;">📷 ФОТО</h3>';
+            html += '<p><strong>Всего записей:</strong> ' + photos.length + '</p>';
+            html += '<p><strong>✓ Активных:</strong> ' + activePhotos + '</p>';
+            html += '<p><strong>🙈 Скрытых:</strong> ' + hiddenPhotos + '</p>';
+            html += '<p><strong>🗑️ Удалённых:</strong> ' + deletedPhotos + '</p>';
             
-            msg += 'Первые 5 фото:\n';
+            html += '<h4 style="margin-top:20px;">Первые 10 фото:</h4>';
+            html += '<table style="width:100%;border-collapse:collapse;">';
+            html += '<tr style="background:#f0f0f0;"><th style="padding:8px;text-align:left;border:1px solid #ddd;">ID</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">Папка</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">File ID</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">Скрыто</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">Удалено</th></tr>';
+            
             var count = 0;
-            for (var k = 0; k < photos.length && count < 5; k++) {
+            for (var k = 0; k < photos.length && count < 10; k++) {
                 var p = photos[k];
                 if (!p.deleted) {
-                    msg += '- ' + p.id + ' (папка ' + p.folder_id + ')\n';
+                    html += '<tr>';
+                    html += '<td style="padding:8px;border:1px solid #ddd;">' + p.id + '</td>';
+                    html += '<td style="padding:8px;border:1px solid #ddd;">' + p.folder_id + '</td>';
+                    html += '<td style="padding:8px;border:1px solid #ddd;word-break:break-all;">' + p.file_id.substring(0, 20) + '...</td>';
+                    html += '<td style="padding:8px;border:1px solid #ddd;">' + (p.hidden ? '✓' : '') + '</td>';
+                    html += '<td style="padding:8px;border:1px solid #ddd;">' + (p.deleted ? '✓' : '') + '</td>';
+                    html += '</tr>';
                     count++;
                 }
             }
             
-            alert(msg);
+            html += '</table>';
+            
+            document.getElementById('storage-content').innerHTML = html;
         })
         .catch(function(error) {
-            alert('Ошибка: ' + error.message);
+            document.getElementById('storage-content').innerHTML = '<p style="color:red;">Ошибка загрузки: ' + error.message + '</p>';
         });
     },
     
