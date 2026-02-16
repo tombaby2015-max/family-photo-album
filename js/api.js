@@ -139,7 +139,7 @@ var api = {
             reader.onerror = reject;
             reader.readAsDataURL(file);
         });
-    }
+    },
 
     // Массовое обновление порядка папок (одним запросом)
     reorderFolders: function(orders) {
