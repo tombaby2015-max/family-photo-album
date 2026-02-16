@@ -248,6 +248,58 @@ var admin = {
         
         input.click();
     },
+
+    // Просмотр данных в хранилище
+    viewStorage: function() {
+        var self = this;
+        var token = api.getToken();
+        
+        if (!token) {
+            alert('Ошибка: не авторизован');
+            return;
+        }
+        
+        // Загружаем данные
+        Promise.all([
+            api.getFolders(),
+            // Получаем все фото через отдельный запрос
+            fetch(API_BASE + '/admin/storage-info', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            }).then(r => r.json())
+        ])
+        .then(function(results) {
+            var folders = results[0];
+            var storageInfo = results[1];
+            
+            var html = '<div style="max-height: 500px; overflow-y: auto; text-align: left; font-size: 13px;">';
+            html += '<h3>📁 Папки (' + folders.length + ')</h3>';
+            html += '<ul>';
+            for (var i = 0; i < folders.length; i++) {
+                var f = folders[i];
+                html += '<li><b>' + f.title + '</b> (ID: ' + f.id + ', Topic: ' + f.topic_id + ')</li>';
+            }
+            html += '</ul>';
+            
+            if (storageInfo.success && storageInfo.photos) {
+                html += '<h3>📷 Фото (' + storageInfo.photos.length + ')</h3>';
+                html += '<ul>';
+                for (var j = 0; j < storageInfo.photos.length; j++) {
+                    var p = storageInfo.photos[j];
+                    html += '<li>ID: ' + p.id + ', Папка: ' + p.folder_id + ', File: ' + p.file_id.substring(0, 20) + '...</li>';
+                }
+                html += '</ul>';
+            }
+            
+            html += '</div>';
+            
+            // Открываем в новом окне
+            var w = window.open('', 'storage', 'width=600,height=600');
+            w.document.write('<html><head><title>Хранилище KV</title></head><body style="font-family: Arial; padding: 20px;">' + html + '</body></html>');
+        })
+        .catch(function(error) {
+            alert('Ошибка загрузки: ' + error.message);
+        });
+    },
     
     // Синхронизация с Telegram (очистка мёртвых ID)
     syncStorage: function() {
