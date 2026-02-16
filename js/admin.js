@@ -361,6 +361,7 @@ var admin = {
             alert('❌ Ошибка: ' + error.message);
         });
     },    
+
     initSortable: function() {
         var container = document.getElementById('folders-container');
         if (!container || !api.isAdmin()) return;
@@ -371,8 +372,23 @@ var admin = {
             handle: '.folder-card',
             ghostClass: 'sortable-ghost',
             dragClass: 'sortable-drag',
+            onStart: function(evt) {
+                // Проверяем, все ли папки загружены
+                if (!gallery.allFoldersLoaded()) {
+                    alert('Не все папки загружены, загрузите сначала все папки, потом сможете поменять их местами');
+                    evt.preventDefault(); // Отменяем перетаскивание
+                    return false;
+                }
+            },
             onEnd: function(evt) {
-                var items = container.querySelectorAll('li');
+                // Проверяем ещё раз на всякий случай
+                if (!gallery.allFoldersLoaded()) {
+                    alert('Не все папки загружены, загрузите сначала все папки, потом сможете поменять их местами');
+                    gallery.loadFolders(); // Перезагружаем чтобы восстановить порядок
+                    return;
+                }
+                
+                var items = container.querySelectorAll('li.folder-card'); // Берем только карточки папок, без кнопки "Загрузить ещё"
                 var newOrder = [];
                 for (var i = 0; i < items.length; i++) {
                     var id = items[i].getAttribute('data-id');
@@ -385,7 +401,7 @@ var admin = {
             }
         });
     },
-
+    
     saveFoldersOrder: function(newOrder) {
         var promises = [];
         for (var i = 0; i < newOrder.length; i++) {
