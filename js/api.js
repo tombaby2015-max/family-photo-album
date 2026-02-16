@@ -1,5 +1,3 @@
-console.log("api.js начал загружаться");
-
 var API_BASE = 'https://photo-app-backend.belovolov-email.workers.dev';
 
 var api = {
@@ -153,5 +151,3 @@ var api = {
           .catch(function() { return null; });
     },
 };
-
-console.log("api.js дошёл до конца, api теперь существует");
