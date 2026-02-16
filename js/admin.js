@@ -193,6 +193,62 @@ var admin = {
         });
     },
 
+    // Восстановление из бэкапа
+    restoreBackup: function() {
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        
+        input.onchange = function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            
+            if (!confirm('⚠️ ВНИМАНИЕ!\n\nЭто удалит ВСЕ текущие папки и фото из хранилища и заменит их данными из бэкапа.\n\nПродолжить?')) {
+                return;
+            }
+            
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    var backup = JSON.parse(event.target.result);
+                    
+                    if (!backup.folders || !backup.photos) {
+                        alert('❌ Неверный формат файла бэкапа');
+                        return;
+                    }
+                    
+                    // Отправляем на сервер для восстановления
+                    fetch(API_BASE + '/admin/restore', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + api.getToken()
+                        },
+                        body: JSON.stringify(backup)
+                    })
+                    .then(function(response) { return response.json(); })
+                    .then(function(result) {
+                        if (result.success) {
+                            alert('✅ Восстановление завершено!\n\n📁 Папок восстановлено: ' + result.foldersRestored + '\n📷 Фото восстановлено: ' + result.photosRestored);
+                            gallery.showMainPage();
+                        } else {
+                            alert('❌ Ошибка восстановления: ' + (result.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(function(error) {
+                        alert('❌ Ошибка: ' + error.message);
+                    });
+                    
+                } catch (e) {
+                    alert('❌ Неверный формат файла бэкапа');
+                }
+            };
+            reader.readAsText(file);
+        };
+        
+        input.click();
+    },
+    
     // Синхронизация с Telegram (очистка мёртвых ID)
     syncStorage: function() {
         var self = this;
