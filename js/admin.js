@@ -444,15 +444,20 @@ var admin = {
     },
 
     saveFoldersOrder: function(newOrder) {
+        console.log('Сохраняю порядок:', newOrder);
+        
         var promises = [];
         for (var i = 0; i < newOrder.length; i++) {
+            console.log('Обновляю папку', newOrder[i].id, '-> order', newOrder[i].order);
             promises.push(api.updateFolder(newOrder[i].id, { order: newOrder[i].order }));
         }
         
-        Promise.all(promises).then(function() {
-            console.log('Порядок сохранен');
-        }).catch(function() {
-            console.error('Ошибка сохранения порядка');
+        Promise.all(promises).then(function(results) {
+            console.log('✅ Все запросы выполнены:', results);
+            alert('Порядок сохранен! Перезагрузите страницу и проверьте.');
+        }).catch(function(error) {
+            console.error('❌ Ошибка сохранения порядка:', error);
+            alert('Ошибка сохранения порядка! Смотрите консоль (F12).');
         });
     },
 
