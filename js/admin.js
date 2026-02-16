@@ -444,20 +444,22 @@ var admin = {
     },
 
     saveFoldersOrder: function(newOrder) {
-        console.log('Сохраняю порядок:', newOrder);
+        console.log('Сохраняю порядок одним запросом:', newOrder);
         
-        var promises = [];
-        for (var i = 0; i < newOrder.length; i++) {
-            console.log('Обновляю папку', newOrder[i].id, '-> order', newOrder[i].order);
-            promises.push(api.updateFolder(newOrder[i].id, { order: newOrder[i].order }));
-        }
+        var self = this;
         
-        Promise.all(promises).then(function(results) {
-            console.log('✅ Все запросы выполнены:', results);
-            alert('Порядок сохранен! Перезагрузите страницу и проверьте.');
+        api.reorderFolders(newOrder).then(function(result) {
+            if (result && result.success) {
+                console.log('✅ Порядок сохранен, обновлено папок:', result.updated);
+                self.createBackup('Изменение порядка папок');
+                alert('Порядок сохранен! Перезагрузите страницу.');
+            } else {
+                console.error('❌ Ошибка сохранения:', result);
+                alert('Ошибка сохранения порядка! Смотрите консоль.');
+            }
         }).catch(function(error) {
-            console.error('❌ Ошибка сохранения порядка:', error);
-            alert('Ошибка сохранения порядка! Смотрите консоль (F12).');
+            console.error('❌ Ошибка сети:', error);
+            alert('Ошибка соединения при сохранении порядка.');
         });
     },
 
