@@ -56,7 +56,7 @@ var admin = {
         this.hideAdminUI();
         this.stopInactivityTimer();
         this.removeBeforeUnload();
-        gallery.showMainPage();
+        location.reload();
     },
 
     showAdminUI: function() {
@@ -78,18 +78,17 @@ var admin = {
         if (folderAdminPanel) folderAdminPanel.style.display = 'none';
         
         this.isAdminActive = false;
-        gallery.loadFolders();
     },
 
     startInactivityTimer: function() {
         this.stopInactivityTimer();
         var self = this;
         this.inactivityTimer = setTimeout(function() {
-            alert('Вы автоматически вышли из админки из-за бездействия ');
+            alert('Вы автоматически вышли из админки из-за бездействия');
             self.createBackup('Автовыход из-за бездействия');
             api.logout();
             self.hideAdminUI();
-            gallery.showMainPage();
+            location.reload();
         }, this.inactivityTimeout);
     },
 
@@ -193,7 +192,6 @@ var admin = {
         });
     },
 
-    // Восстановление из бэкапа
     restoreBackup: function() {
         var input = document.createElement('input');
         input.type = 'file';
@@ -217,7 +215,6 @@ var admin = {
                         return;
                     }
                     
-                    // Отправляем на сервер для восстановления
                     fetch(API_BASE + '/admin/restore', {
                         method: 'POST',
                         headers: {
@@ -230,7 +227,7 @@ var admin = {
                     .then(function(result) {
                         if (result.success) {
                             alert('✅ Восстановление завершено!\n\n📁 Папок восстановлено: ' + result.foldersRestored + '\n📷 Фото восстановлено: ' + result.photosRestored);
-                            gallery.showMainPage();
+                            location.reload();
                         } else {
                             alert('❌ Ошибка восстановления: ' + (result.error || 'Unknown error'));
                         }
@@ -249,7 +246,6 @@ var admin = {
         input.click();
     },
 
-    // Просмотр данных в хранилище
     viewStorage: function() {
         var token = api.getToken();
         
@@ -258,60 +254,61 @@ var admin = {
             return;
         }
         
-        // Загружаем папки
-        api.getFolders().then(function(folders) {
-            // Загружаем инфо о фото
-            return fetch(API_BASE + '/admin/storage-info', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(storageInfo) {
-                var msg = '📁 ПАПКИ (' + folders.length + '):\n\n';
-                
-                for (var i = 0; i < folders.length; i++) {
-                    var f = folders[i];
-                    msg += (i + 1) + '. ' + f.title + '\n';
-                    msg += '   ID: ' + f.id + '\n';
-                    msg += '   Topic: ' + f.topic_id + '\n\n';
+        fetch(API_BASE + '/admin/storage-info', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(response) {
+            if (!response.success) {
+                alert('Ошибка: ' + (response.error || 'Unknown error'));
+                return;
+            }
+            
+            var folders = response.folders || [];
+            var photos = response.photos || [];
+            
+            var msg = '📁 ПАПКИ (' + folders.length + '):\n\n';
+            
+            for (var i = 0; i < folders.length; i++) {
+                var f = folders[i];
+                msg += (i + 1) + '. ' + f.title + '\n';
+                msg += '   ID: ' + f.id + '\n';
+                msg += '   Topic: ' + f.topic_id + '\n\n';
+            }
+            
+            var activePhotos = 0;
+            var deletedPhotos = 0;
+            
+            for (var j = 0; j < photos.length; j++) {
+                if (photos[j].deleted) {
+                    deletedPhotos++;
+                } else {
+                    activePhotos++;
                 }
-                
-                if (storageInfo.success && storageInfo.photos) {
-                    var activePhotos = 0;
-                    var deletedPhotos = 0;
-                    
-                    for (var j = 0; j < storageInfo.photos.length; j++) {
-                        if (storageInfo.photos[j].deleted) {
-                            deletedPhotos++;
-                        } else {
-                            activePhotos++;
-                        }
-                    }
-                    
-                    msg += '📷 ФОТО:\n';
-                    msg += 'Активных: ' + activePhotos + '\n';
-                    msg += 'Удалённых: ' + deletedPhotos + '\n';
-                    msg += 'Всего записей: ' + storageInfo.photos.length + '\n\n';
-                    
-                    msg += 'Первые 5 фото:\n';
-                    var count = 0;
-                    for (var k = 0; k < storageInfo.photos.length && count < 5; k++) {
-                        var p = storageInfo.photos[k];
-                        if (!p.deleted) {
-                            msg += '- ' + p.id + ' (папка ' + p.folder_id + ')\n';
-                            count++;
-                        }
-                    }
+            }
+            
+            msg += '📷 ФОТО:\n';
+            msg += 'Активных: ' + activePhotos + '\n';
+            msg += 'Удалённых: ' + deletedPhotos + '\n';
+            msg += 'Всего записей: ' + photos.length + '\n\n';
+            
+            msg += 'Первые 5 фото:\n';
+            var count = 0;
+            for (var k = 0; k < photos.length && count < 5; k++) {
+                var p = photos[k];
+                if (!p.deleted) {
+                    msg += '- ' + p.id + ' (папка ' + p.folder_id + ')\n';
+                    count++;
                 }
-                
-                alert(msg);
-            });
+            }
+            
+            alert(msg);
         })
         .catch(function(error) {
             alert('Ошибка: ' + error.message);
         });
     },
     
-    // Синхронизация с Telegram (очистка мёртвых ID)
     syncStorage: function() {
         var self = this;
         var token = api.getToken();
@@ -361,18 +358,13 @@ var admin = {
             alert('❌ Ошибка: ' + error.message);
         });
     },    
-
+    
     initSortable: function() {
         var container = document.getElementById('folders-container');
         if (!container || !api.isAdmin()) return;
         
-        // Проверяем, все ли папки загружены
-        if (!gallery.allFoldersLoaded()) {
-            // Не инициализируем сортировку, но не показываем алерт здесь
-            // Алерт покажем при попытке перетаскивания
-        }
-        
         var self = this;
+        
         new Sortable(container, {
             animation: 150,
             handle: '.folder-card',
@@ -397,12 +389,14 @@ var admin = {
                         newOrder.push({ id: id, order: i + 1 });
                     }
                 }
+                
+                // Обновляем order у всех папок последовательно 1, 2, 3...
                 self.saveFoldersOrder(newOrder);
                 self.createBackup('Изменение порядка папок');
             }
         });
     },
-    
+
     saveFoldersOrder: function(newOrder) {
         var promises = [];
         for (var i = 0; i < newOrder.length; i++) {
@@ -461,7 +455,6 @@ var admin = {
     },
 
     toggleFolderHidden: function(folderId, hidden) {
-        // УБРАЛИ confirm, действие сразу без подтверждения
         var self = this;
         api.updateFolder(folderId, { hidden: hidden }).then(function(result) {
             if (result) {
@@ -500,7 +493,11 @@ var admin = {
 
     uploadPhoto: function() {
         var input = document.getElementById('photo-upload');
-        if (input) input.click();
+        if (input) {
+            // Принудительно сбрасываем value для Оперы
+            input.value = '';
+            input.click();
+        }
     },
 
     handlePhotoUpload: function(input) {
@@ -525,31 +522,9 @@ var admin = {
         function uploadNext(index) {
             if (index >= files.length) {
                 setTimeout(function() {
-                    api.getPhotos(folderId).then(function(photos) {
-                        gallery.currentPhotos = photos;
-                        var isAdmin = api.isAdmin();
-                        gallery.visiblePhotos = [];
-                        for (var i = 0; i < photos.length; i++) {
-                            if (isAdmin || !photos[i].hidden) {
-                                gallery.visiblePhotos.push(photos[i]);
-                            }
-                        }
-                        
-                        if (grid) {
-                            if (gallery.visiblePhotos.length === 0) {
-                                grid.innerHTML = '<div class="empty-state"><h4>В этой папке пока нет фото</h4></div>';
-                            } else {
-                                grid.innerHTML = gallery.visiblePhotos.map(function(photo, idx) {
-                                    return gallery.createPhotoItem(photo, idx);
-                                }).join('');
-                            }
-                        }
-                        
-                        self.createBackup('Загрузка ' + uploaded + ' фото');
-                        
-                        // УБРАЛИ алерты успеха загрузки
-                        console.log('Загружено ' + uploaded + ' фото, ошибок: ' + failed);
-                    });
+                    gallery.loadPhotos(folderId);
+                    self.createBackup('Загрузка ' + uploaded + ' фото');
+                    console.log('Загружено ' + uploaded + ' фото, ошибок: ' + failed);
                 }, 2000);
                 
                 input.value = '';
@@ -622,7 +597,6 @@ var admin = {
     },
 
     togglePhotoHidden: function(photoId, hidden) {
-        // УБРАЛИ confirm, действие сразу без подтверждения
         var self = this;
         api.updatePhoto(photoId, { hidden: hidden }).then(function(result) {
             if (result && gallery.currentFolder) {
