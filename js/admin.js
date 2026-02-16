@@ -321,9 +321,11 @@ var admin = {
             return;
         }
         
-        if (!confirm('Проверить хранилище?\n\nБудет проверено:\n- Существуют ли темы в Telegram\n- Существуют ли фото в Telegram\n\nУдалённые данные будут стёрты из KV')) {
+        if (!confirm('🧹 ОЧИСТКА ХРАНИЛИЩА\n\nБудет удалено из KV:\n- Папки, темы которых не найдены в Telegram\n- Фото, файлы которых не найдены в Telegram\n\n⚠️ Восстановить можно только из бэкапа!\n\nПродолжить?')) {
             return;
         }
+        
+        alert('⏳ Очистка началась...\n\nПодождите 1-2 минуты');
         
         fetch(API_BASE + '/admin/sync', {
             method: 'POST',
@@ -335,14 +337,18 @@ var admin = {
         .then(function(response) { return response.json(); })
         .then(function(result) {
             if (result.success) {
-                var msg = '✅ Проверка завершена!\n\n';
+                var msg = '✅ Очистка завершена!\n\n';
                 msg += '📁 Папок проверено: ' + result.foldersChecked + '\n';
                 msg += '🗑️ Папок удалено: ' + result.foldersRemoved + '\n\n';
                 msg += '📷 Фото проверено: ' + result.photosChecked + '\n';
-                msg += '🗑️ Фото удалено: ' + result.photosRemoved;
+                msg += '🗑️ Фото удалено: ' + result.photosRemoved + '\n';
                 
                 if (result.errors.length > 0) {
-                    msg += '\n\n⚠️ Ошибок: ' + result.errors.length;
+                    msg += '\n⚠️ Ошибок: ' + result.errors.length + '\n';
+                    msg += 'Примеры:\n';
+                    for (var k = 0; k < Math.min(result.errors.length, 3); k++) {
+                        msg += '- ' + result.errors[k].substring(0, 50) + '...\n';
+                    }
                 }
                 
                 alert(msg);
@@ -354,8 +360,7 @@ var admin = {
         .catch(function(error) {
             alert('❌ Ошибка: ' + error.message);
         });
-    },
-    
+    },    
     initSortable: function() {
         var container = document.getElementById('folders-container');
         if (!container || !api.isAdmin()) return;
