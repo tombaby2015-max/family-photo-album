@@ -140,4 +140,14 @@ var api = {
             reader.readAsDataURL(file);
         });
     }
+
+    // Массовое обновление порядка папок (одним запросом)
+    reorderFolders: function(orders) {
+        return fetch(API_BASE + '/folders/reorder', {
+            method: 'POST',
+            headers: this.getHeaders(true),
+            body: JSON.stringify({ orders: orders })
+        }).then(function(response) { return response.json(); })
+          .catch(function() { return null; });
+    },
 };
