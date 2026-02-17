@@ -104,8 +104,7 @@ var admin = {
     },
 
     
-    reloadPage: function() {
-        this.removeBeforeUnload();
+        reloadPage: function() {
         location.reload(true);
     },
     
