@@ -468,7 +468,7 @@
     justify-content: center;
     max-width: 95%;
     max-height: 85vh;
-    padding: 0 50px; /* Отступы слева и справа для стрелок */
+    padding: 0 80px;    /* ← СТАЛО 80px (больше места для стрелок) */
     box-sizing: border-box;
 }
 
@@ -511,16 +511,16 @@
     background: none;
     border: none;
     color: rgba(255,255,255,0.4);
-    font-size: 40px;
+    font-size: 60px;        /* ← СТАЛО 60px (больше стрелки) */
     cursor: pointer;
     z-index: 2;
-    padding: 15px;
+    padding: 20px;          /* ← СТАЛО 20px (больше область нажатия) */
     line-height: 1;
     transition: all 0.3s;
     outline: none !important;
     -webkit-tap-highlight-color: transparent;
-    width: 50px;
-    height: 80px;
+    width: 70px;            /* ← СТАЛО 70px */
+    height: 100px;          /* ← СТАЛО 100px */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -539,12 +539,12 @@
     color: #fff;
 }
 
-/* Стрелки прижаты к краям wrapper */
+/* Стрелки отодвинуты от фото */
 .fullscreen-viewer__prev { 
-    left: 0; 
+    left: -60px;    /* ← СТАЛО -60px (вне wrapper, левее фото) */
 }
 .fullscreen-viewer__next { 
-    right: 0; 
+    right: -60px;   /* ← СТАЛО -60px (вне wrapper, правее фото) */
 }
 
 /* Кнопки в fullscreen */
