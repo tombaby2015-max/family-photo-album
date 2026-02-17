@@ -40,7 +40,6 @@ var admin = {
                 self.closeModal();
                 self.showAdminUI();
                 self.startInactivityTimer();
-                self.setupBeforeUnload();
                 gallery.loadFolders();
             } else {
                 if (errorEl) errorEl.textContent = result.error || 'Ошибка входа';
@@ -55,7 +54,6 @@ var admin = {
         api.logout();
         this.hideAdminUI();
         this.stopInactivityTimer();
-        this.removeBeforeUnload();
         location.reload();
     },
 
@@ -105,26 +103,7 @@ var admin = {
         }
     },
 
-    setupBeforeUnload: function() {
-        var self = this;
-        window.addEventListener('beforeunload', this.beforeUnloadHandler);
-        document.addEventListener('click', function() { self.resetInactivityTimer(); });
-        document.addEventListener('keypress', function() { self.resetInactivityTimer(); });
-        document.addEventListener('scroll', function() { self.resetInactivityTimer(); });
-    },
-
-    removeBeforeUnload: function() {
-        window.removeEventListener('beforeunload', this.beforeUnloadHandler);
-    },
-
-    beforeUnloadHandler: function(e) {
-        if (admin.isAdminActive) {
-            e.preventDefault();
-            e.returnValue = 'Вы в админке. Выйти?';
-            return e.returnValue;
-        }
-    },
-
+    
     reloadPage: function() {
         this.removeBeforeUnload();
         location.reload(true);
@@ -452,7 +431,7 @@ var admin = {
             if (result && result.success) {
                 console.log('✅ Порядок сохранен, обновлено папок:', result.updated);
                 self.createBackup('Изменение порядка папок');
-                alert('Порядок сохранен! Перезагрузите страницу.');
+                // УБРАЛИ alert('Порядок сохранен! Перезагрузите страницу.');
             } else {
                 console.error('❌ Ошибка сохранения:', result);
                 alert('Ошибка сохранения порядка! Смотрите консоль.');
