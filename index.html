@@ -141,17 +141,21 @@
         </div>
     </div>
 
-    <!-- FULLSCREEN ПРОСМОТР -->
+    <!-- FULLSCREEN ПРОСМОТР - ИСПРАВЛЕННАЯ СТРУКТУРА -->
     <div id="fullscreen-viewer" class="fullscreen-viewer" style="display:none;">
         <div class="fullscreen-viewer__overlay" onclick="gallery.closeFullscreen()"></div>
         <button class="fullscreen-viewer__close" onclick="gallery.closeFullscreen()">×</button>
-        <button class="fullscreen-viewer__nav fullscreen-viewer__prev" onclick="gallery.prevPhoto()">‹</button>
         
-        <div class="fullscreen-viewer__image-container">
-            <img id="fullscreen-image" src="" alt="">
+        <!-- ОБЕРТКА для фото и стрелок -->
+        <div class="fullscreen-viewer__wrapper">
+            <button class="fullscreen-viewer__nav fullscreen-viewer__prev" onclick="gallery.prevPhoto()">‹</button>
+            
+            <div class="fullscreen-viewer__image-container">
+                <img id="fullscreen-image" src="" alt="">
+            </div>
+            
+            <button class="fullscreen-viewer__nav fullscreen-viewer__next" onclick="gallery.nextPhoto()">›</button>
         </div>
-        
-        <button class="fullscreen-viewer__nav fullscreen-viewer__next" onclick="gallery.nextPhoto()">›</button>
         
         <!-- Кнопки для админа и скачать - один ряд -->
         <div class="fullscreen-viewer__buttons" id="fullscreen-buttons">
@@ -161,7 +165,7 @@
         </div>
     </div>
 
-        <!-- ФУТЕР -->
+    <!-- ФУТЕР -->
     <div id="main-footer" class="t-tildalabel t-tildalabel-free" style="padding: 20px; text-align: center; background:#fff;">
         <button class="admin-login-btn" onclick="admin.openModal()">Админ</button>
     </div>
