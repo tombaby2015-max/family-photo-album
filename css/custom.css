@@ -101,7 +101,7 @@
 }
 
 .admin-panel__buttons .admin-btn {
-    width: 200px; /* Фиксированная ширина для всех */
+    width: 200px;
     min-width: 200px;
     max-width: 200px;
     margin-bottom: 0;
@@ -110,20 +110,6 @@
     box-sizing: border-box;
     text-align: center;
     justify-content: center;
-}
-
-/* На мобильных тоже одинаковая ширина */
-@media (max-width: 768px) {
-    .admin-panel__buttons {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .admin-panel__buttons .admin-btn {
-        width: 90% !important;
-        min-width: 200px !important;
-        max-width: 300px !important;
-    }
 }
 
 /* Кнопки админа */
@@ -418,45 +404,7 @@
     gap: 20px;
     flex: 1;
 }
-@media (max-width: 1200px) {
-    .photos-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    .folder-title-bar h2 {
-        font-size: 28px;
-    }
-}
-@media (max-width: 768px) {
-    .folder-content {
-        flex-direction: column;
-        padding: 20px;
-    }
-    .folder-sidebar {
-        width: 100%;
-    }
-    .photos-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-    .folder-title-bar {
-        padding: 15px 20px;
-        text-align: left;
-    }
-    .folder-title-bar h2 {
-        font-size: 24px;
-    }
-    .preview-editor__btn {
-        width: 30px;
-        height: 30px;
-        font-size: 14px;
-    }
-    .preview-editor__btn.zoom-out,
-    .preview-editor__btn.zoom-in {
-        width: 34px;
-        height: 34px;
-        font-size: 20px;
-    }
-}
+
 .photo-item {
     aspect-ratio: 1;
     background: #eee;
@@ -516,7 +464,7 @@
     z-index: 1;
     max-width: 92%;
     max-height: 85vh;
-    touch-action: pan-y; /* Разрешаем вертикальный свайп, но ловим горизонтальный */
+    touch-action: pan-y;
 }
 .fullscreen-viewer img {
     max-width: 100%;
@@ -541,6 +489,8 @@
 .fullscreen-viewer__close:hover {
     opacity: 1;
 }
+
+/* Навигационные стрелки - единый блок */
 .fullscreen-viewer__nav {
     position: absolute;
     top: 50%;
@@ -554,12 +504,31 @@
     padding: 15px;
     line-height: 1;
     transition: all 0.3s;
+    /* Убираем обводку фокуса */
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
 }
+
+/* Убираем обводку при фокусе и нажатии */
+.fullscreen-viewer__nav:focus,
+.fullscreen-viewer__nav:active,
+.fullscreen-viewer__nav:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
 .fullscreen-viewer__nav:hover {
     color: #fff;
 }
-.fullscreen-viewer__prev { left: 5px; }
-.fullscreen-viewer__next { right: 5px; }
+
+/* Позиционируем ближе к фото, не к краям экрана */
+.fullscreen-viewer__prev { 
+    left: 2%; 
+}
+.fullscreen-viewer__next { 
+    right: 2%; 
+}
 
 /* Кнопки в fullscreen */
 .fullscreen-viewer__buttons {
@@ -658,41 +627,131 @@
     border-color: #000;
 }
 
-/* МОБИЛЬНЫЕ СТИЛИ */
-
-/* Запрет горизонтального скролла */
+/* Базовые стили */
 body {
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
 }
 
-/* Админ-панель на мобильных */
+html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+}
 
-@media (max-width: 768px) {
-    .fullscreen-viewer__prev,
-    .fullscreen-viewer__next {
-        display: none !important;
+/* Кнопка Админ по центру */
+#main-footer {
+    text-align: center !important;
+    padding: 20px !important;
+    overflow: hidden;
+}
+
+#main-footer .admin-login-btn {
+    margin: 0 auto !important;
+    display: inline-block !important;
+    float: none !important;
+}
+
+/* Если админ-панель скрыта — не занимает место */
+#admin-panel[style*="display:none"],
+#admin-panel[style*="display: none"] {
+    display: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Проверка ширины элементов */
+#load-more-folders-container,
+#load-more-photos-container {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Для Оперы - принудительно открывать выбор файла */
+#photo-upload {
+    position: absolute;
+    left: -9999px;
+    opacity: 0;
+}
+
+/* ==================== */
+/* МЕДИА-ЗАПРОСЫ        */
+/* ==================== */
+
+/* Десктоп - широкие экраны */
+@media (min-width: 1400px) {
+    .fullscreen-viewer__prev { 
+        left: 5%; 
+    }
+    .fullscreen-viewer__next { 
+        right: 5%; 
     }
 }
 
-/* Главная страница - стрелка видна */
-@media (max-width: 768px) {
-    .t-cover {
-        height: 90vh !important;
+/* Планшеты */
+@media (max-width: 1200px) {
+    .photos-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
-    .t-cover__carrier,
-    .t-cover__filter,
-    .t-cover__wrapper {
-        height: 90vh !important;
-    }
-    .t-cover__arrow {
-        bottom: 80px !important;
+    .folder-title-bar h2 {
+        font-size: 28px;
     }
 }
 
-/* Fullscreen на мобильных - убрать стрелки, добавить свайп */
+/* Мобильные устройства */
 @media (max-width: 768px) {
+    /* Админ-панель на мобильных */
+    .admin-panel__buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .admin-panel__buttons .admin-btn {
+        width: 90% !important;
+        min-width: 200px !important;
+        max-width: 300px !important;
+    }
+    
+    /* Контент папки */
+    .folder-content {
+        flex-direction: column;
+        padding: 20px;
+    }
+    .folder-sidebar {
+        width: 100%;
+    }
+    
+    /* Сетка фото */
+    .photos-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    /* Заголовок папки */
+    .folder-title-bar {
+        padding: 15px 20px;
+        text-align: left;
+    }
+    .folder-title-bar h2 {
+        font-size: 24px;
+    }
+    
+    /* Редактор превью */
+    .preview-editor__btn {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+    .preview-editor__btn.zoom-out,
+    .preview-editor__btn.zoom-in {
+        width: 34px;
+        height: 34px;
+        font-size: 20px;
+    }
+    
+    /* Fullscreen - убираем стрелки, добавляем свайп */
     .fullscreen-viewer__prev,
     .fullscreen-viewer__next {
         display: none !important;
@@ -731,63 +790,30 @@ body {
         bottom: 20px;
         padding: 10px;
     }
-}
-
-/* Для Оперы - принудительно открывать выбор файла */
-#photo-upload {
-    position: absolute;
-    left: -9999px;
-    opacity: 0;
-}
-
-/* Проверка ширины элементов */
-#load-more-folders-container,
-#load-more-photos-container {
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-/* Если админ-панель скрыта — не занимает место */
-#admin-panel[style*="display:none"],
-#admin-panel[style*="display: none"] {
-    display: none !important;
-    height: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-/* Кнопка Админ по центру */
-#main-footer {
-    text-align: center !important;
-    padding: 20px !important;
-    overflow: hidden;
-}
-
-#main-footer .admin-login-btn {
-    margin: 0 auto !important;
-    display: inline-block !important;
-    float: none !important;
-}
-
-/* Запрет горизонтального скролла */
-html, body {
-    overflow-x: hidden !important;
-    width: 100% !important;
-    max-width: 100vw !important;
-}
-
-/* На мобильных кнопки админа видны всегда */
-@media (max-width: 768px) {
+    
+    /* На мобильных кнопки админа видны всегда */
     .folder-card__admin-actions,
     .photo-item__admin-actions {
         opacity: 1 !important;
         display: flex !important;
     }
     
-    /* Уменьшаем кнопки чтобы не мешали */
     .folder-card__admin-actions button,
     .photo-item__admin-actions button {
         padding: 4px 6px;
         font-size: 11px;
+    }
+    
+    /* Главная страница - стрелка видна */
+    .t-cover {
+        height: 90vh !important;
+    }
+    .t-cover__carrier,
+    .t-cover__filter,
+    .t-cover__wrapper {
+        height: 90vh !important;
+    }
+    .t-cover__arrow {
+        bottom: 80px !important;
     }
 }
