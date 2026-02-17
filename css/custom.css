@@ -460,7 +460,7 @@
     background: rgba(0,0,0,0.95);
 }
 
-/* ОБЕРТКА для фото и стрелок */
+/* ОБЕРТКА для фото и стрелок - с отступами для стрелок */
 .fullscreen-viewer__wrapper {
     position: relative;
     display: flex;
@@ -468,6 +468,8 @@
     justify-content: center;
     max-width: 95%;
     max-height: 85vh;
+    padding: 0 50px; /* Отступы слева и справа для стрелок */
+    box-sizing: border-box;
 }
 
 .fullscreen-viewer__image-container {
@@ -501,7 +503,7 @@
     opacity: 1;
 }
 
-/* Навигационные стрелки - внутри wrapper, по краям фото */
+/* Навигационные стрелки - внутри wrapper */
 .fullscreen-viewer__nav {
     position: absolute;
     top: 50%;
@@ -517,6 +519,11 @@
     transition: all 0.3s;
     outline: none !important;
     -webkit-tap-highlight-color: transparent;
+    width: 50px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Убираем обводку при фокусе и нажатии */
@@ -532,7 +539,7 @@
     color: #fff;
 }
 
-/* Стрелки прижаты к краям wrapper (к фото) */
+/* Стрелки прижаты к краям wrapper */
 .fullscreen-viewer__prev { 
     left: 0; 
 }
@@ -762,6 +769,7 @@ html, body {
         height: 100%;
         max-width: 100%;
         max-height: 100%;
+        padding: 0;
     }
     
     .fullscreen-viewer__image-container {
