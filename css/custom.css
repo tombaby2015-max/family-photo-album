@@ -756,3 +756,19 @@ html, body {
     width: 100% !important;
     max-width: 100vw !important;
 }
+
+/* На мобильных кнопки админа видны всегда */
+@media (max-width: 768px) {
+    .folder-card__admin-actions,
+    .photo-item__admin-actions {
+        opacity: 1 !important;
+        display: flex !important;
+    }
+    
+    /* Уменьшаем кнопки чтобы не мешали */
+    .folder-card__admin-actions button,
+    .photo-item__admin-actions button {
+        padding: 4px 6px;
+        font-size: 11px;
+    }
+}
