@@ -649,15 +649,22 @@ body {
 }
 
 /* Админ-панель на мобильных */
+
 @media (max-width: 768px) {
-    .admin-panel__buttons {
-        flex-direction: column;
-        align-items: center;
+    .fullscreen-viewer__prev,
+    .fullscreen-viewer__next {
+        display: block !important;
+        font-size: 30px;
+        padding: 10px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        line-height: 30px;
     }
-    .admin-panel__buttons .admin-btn {
-        width: 90%;
-        max-width: 300px;
-    }
+    
+    .fullscreen-viewer__prev { left: 10px; }
+    .fullscreen-viewer__next { right: 10px; }
 }
 
 /* Главная страница - стрелка видна */
