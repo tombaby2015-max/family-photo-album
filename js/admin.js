@@ -387,6 +387,13 @@ var admin = {
         var container = document.getElementById('folders-container');
         if (!container || !api.isAdmin()) return;
         
+        // Проверяем, не мобильное ли устройство
+        var isMobile = window.matchMedia("(max-width: 768px)").matches;
+        if (isMobile) {
+            console.log('На мобильных перетаскивание отключено');
+            return; // Не инициализируем сортировку на телефоне
+        }
+        
         var self = this;
         
         new Sortable(container, {
@@ -414,9 +421,7 @@ var admin = {
                     }
                 }
                 
-                // Обновляем order у всех папок последовательно 1, 2, 3...
                 self.saveFoldersOrder(newOrder);
-                self.createBackup('Изменение порядка папок');
             }
         });
     },
