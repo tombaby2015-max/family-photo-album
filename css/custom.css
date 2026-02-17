@@ -459,6 +459,17 @@
     height: 100%;
     background: rgba(0,0,0,0.95);
 }
+
+/* Контейнер для фото и стрелок */
+.fullscreen-viewer__wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 95%;
+    max-height: 90vh;
+}
+
 .fullscreen-viewer__image-container {
     position: relative;
     z-index: 1;
@@ -490,7 +501,7 @@
     opacity: 1;
 }
 
-/* Навигационные стрелки - позиционируются относительно контейнера с фото */
+/* Навигационные стрелки */
 .fullscreen-viewer__nav {
     position: absolute;
     top: 50%;
@@ -521,12 +532,12 @@
     color: #fff;
 }
 
-/* Стрелки прикреплены к краям контейнера с фото */
+/* Стрелки внутри wrapper, по краям */
 .fullscreen-viewer__prev { 
-    left: -60px; 
+    left: 0; 
 }
 .fullscreen-viewer__next { 
-    right: -60px; 
+    right: 0; 
 }
 
 /* Кнопки в fullscreen */
@@ -682,10 +693,10 @@ html, body {
 /* Десктоп - широкие экраны */
 @media (min-width: 1400px) {
     .fullscreen-viewer__prev { 
-        left: -80px; 
+        left: -20px; 
     }
     .fullscreen-viewer__next { 
-        right: -80px; 
+        right: -20px; 
     }
 }
 
@@ -696,13 +707,6 @@ html, body {
     }
     .folder-title-bar h2 {
         font-size: 28px;
-    }
-    
-    .fullscreen-viewer__prev { 
-        left: -50px; 
-    }
-    .fullscreen-viewer__next { 
-        right: -50px; 
     }
 }
 
@@ -761,6 +765,13 @@ html, body {
     .fullscreen-viewer__prev,
     .fullscreen-viewer__next {
         display: none !important;
+    }
+    
+    .fullscreen-viewer__wrapper {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
     }
     
     .fullscreen-viewer__image-container {
