@@ -499,32 +499,40 @@ var gallery = {
         };
         document.addEventListener('keydown', this.keyHandler);
         
-        // Swipe для мобильных
+        // Свайп для мобильных - исправленная версия
         var touchStartX = 0;
         var touchEndX = 0;
-        var touchStartY = 0;
-        var touchEndY = 0;
+        var isSwiping = false;
         
         var viewerEl = document.getElementById('fullscreen-viewer');
+        var imageContainer = viewerEl.querySelector('.fullscreen-viewer__image-container');
         
-        function handleTouchStart(e) {
+        // Удаляем старые обработчики если есть
+        if (imageContainer._touchStartHandler) {
+            imageContainer.removeEventListener('touchstart', imageContainer._touchStartHandler);
+        }
+        if (imageContainer._touchEndHandler) {
+            imageContainer.removeEventListener('touchend', imageContainer._touchEndHandler);
+        }
+        
+        imageContainer._touchStartHandler = function(e) {
             touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
-        }
+            isSwiping = true;
+        };
         
-        function handleTouchEnd(e) {
+        imageContainer._touchEndHandler = function(e) {
+            if (!isSwiping) return;
             touchEndX = e.changedTouches[0].screenX;
-            touchEndY = e.changedTouches[0].screenY;
+            isSwiping = false;
             handleSwipe();
-        }
+        };
         
         function handleSwipe() {
-            var diffX = touchStartX - touchEndX;
-            var diffY = touchStartY - touchEndY;
+            var swipeThreshold = 50;
+            var diff = touchStartX - touchEndX;
             
-            // Проверяем, что свайп горизонтальный (не вертикальный)
-            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-                if (diffX > 0) {
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
                     // Свайп влево — следующее фото
                     self.nextPhoto();
                 } else {
@@ -534,13 +542,8 @@ var gallery = {
             }
         }
         
-        // Удаляем старые обработчики если есть
-        viewerEl.removeEventListener('touchstart', handleTouchStart);
-        viewerEl.removeEventListener('touchend', handleTouchEnd);
-        
-        // Добавляем новые
-        viewerEl.addEventListener('touchstart', handleTouchStart, false);
-        viewerEl.addEventListener('touchend', handleTouchEnd, false);
+        imageContainer.addEventListener('touchstart', imageContainer._touchStartHandler, {passive: true});
+        imageContainer.addEventListener('touchend', imageContainer._touchEndHandler, {passive: true});
     },
 
     closeFullscreen: function() {
