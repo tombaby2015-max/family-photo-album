@@ -462,7 +462,7 @@
 .fullscreen-viewer__image-container {
     position: relative;
     z-index: 1;
-    max-width: 92%;
+    max-width: 85%;
     max-height: 85vh;
     touch-action: pan-y;
 }
@@ -473,7 +473,7 @@
     border-radius: 4px;
 }
 .fullscreen-viewer__close {
-    position: absolute;
+    position: fixed;
     top: 15px;
     right: 25px;
     background: none;
@@ -490,7 +490,7 @@
     opacity: 1;
 }
 
-/* Навигационные стрелки - единый блок */
+/* Навигационные стрелки - позиционируются относительно контейнера с фото */
 .fullscreen-viewer__nav {
     position: absolute;
     top: 50%;
@@ -504,7 +504,6 @@
     padding: 15px;
     line-height: 1;
     transition: all 0.3s;
-    /* Убираем обводку фокуса */
     outline: none !important;
     -webkit-tap-highlight-color: transparent;
 }
@@ -522,12 +521,12 @@
     color: #fff;
 }
 
-/* Позиционируем ближе к фото, не к краям экрана */
+/* Стрелки прикреплены к краям контейнера с фото */
 .fullscreen-viewer__prev { 
-    left: 2%; 
+    left: -60px; 
 }
 .fullscreen-viewer__next { 
-    right: 2%; 
+    right: -60px; 
 }
 
 /* Кнопки в fullscreen */
@@ -683,10 +682,10 @@ html, body {
 /* Десктоп - широкие экраны */
 @media (min-width: 1400px) {
     .fullscreen-viewer__prev { 
-        left: 5%; 
+        left: -80px; 
     }
     .fullscreen-viewer__next { 
-        right: 5%; 
+        right: -80px; 
     }
 }
 
@@ -697,6 +696,13 @@ html, body {
     }
     .folder-title-bar h2 {
         font-size: 28px;
+    }
+    
+    .fullscreen-viewer__prev { 
+        left: -50px; 
+    }
+    .fullscreen-viewer__next { 
+        right: -50px; 
     }
 }
 
