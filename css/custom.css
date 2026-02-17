@@ -99,12 +99,31 @@
     max-width: 900px;
     margin: 0 auto;
 }
+
 .admin-panel__buttons .admin-btn {
-    width: auto;
-    min-width: 140px;
+    width: 200px; /* Фиксированная ширина для всех */
+    min-width: 200px;
+    max-width: 200px;
     margin-bottom: 0;
     font-size: 13px;
-    padding: 10px 20px;
+    padding: 10px 15px;
+    box-sizing: border-box;
+    text-align: center;
+    justify-content: center;
+}
+
+/* На мобильных тоже одинаковая ширина */
+@media (max-width: 768px) {
+    .admin-panel__buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .admin-panel__buttons .admin-btn {
+        width: 90% !important;
+        min-width: 200px !important;
+        max-width: 300px !important;
+    }
 }
 
 /* Кнопки админа */
