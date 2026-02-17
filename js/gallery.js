@@ -7,6 +7,7 @@ var gallery = {
     editingFolder: null,
     previewState: { x: 50, y: 50, scale: 100 },
     keyHandler: null,
+    lastOpenedFolderId: null,  // ← ДОБАВЛЕНО: запоминаем ID последней открытой папки
     
     // Для пагинации
     foldersOffset: 0,
@@ -129,6 +130,17 @@ var gallery = {
             })(self.folders[j]);
         }
         
+        // ← ДОБАВЛЕНО: после рендера прокручиваем к последней открытой папке
+        if (self.lastOpenedFolderId) {
+            setTimeout(function() {
+                var folderElement = document.getElementById('folder-' + self.lastOpenedFolderId);
+                if (folderElement) {
+                    folderElement.scrollIntoView({ behavior: 'instant', block: 'center' });
+                }
+                self.lastOpenedFolderId = null;  // Очищаем после использования
+            }, 50);
+        }
+        
         if (self.foldersHasMore) {
             var loadMoreContainer = document.createElement('div');
             loadMoreContainer.id = 'load-more-folders-container';
@@ -201,7 +213,8 @@ var gallery = {
             '</div>';
         }
         
-        return '<li id="folder-' + folder.id + '" class="t214__col t-item t-card__col t-col t-col_4 folder-card ' + hiddenClass + (isEditing ? ' editing' : '') + '" data-id="' + folder.id + '">' +
+        // ← ДОБАВЛЕНО: data-folder-id для поиска элемента при прокрутке
+        return '<li id="folder-' + folder.id + '" class="t214__col t-item t-card__col t-col t-col_4 folder-card ' + hiddenClass + (isEditing ? ' editing' : '') + '" data-folder-id="' + folder.id + '">' +
             '<div class="folder-card__image" id="folder-image-' + folder.id + '" style="' + bgStyle + '">' +
                 '<div class="folder-card__title">' + folder.title + '</div>' +
                 adminActions +
@@ -300,6 +313,9 @@ var gallery = {
     },
 
     openFolder: function(folder, updateHash) {
+        // ← ДОБАВЛЕНО: запоминаем ID папки перед открытием
+        this.lastOpenedFolderId = folder.id;
+        
         if (updateHash !== false) {
             window.location.hash = 'folder=' + folder.id;
         }
@@ -361,9 +377,7 @@ var gallery = {
         this.photosOffset = 0;
         this.photosHasMore = false;
         
-        if (coverSection) {
-            window.scrollTo(0, coverSection.offsetHeight);
-        }
+        // ← ИЗМЕНЕНО: не прокручиваем к cover, а загружаем папки и прокрутим к нужной в renderFolders
         this.loadFolders();
     },
 
