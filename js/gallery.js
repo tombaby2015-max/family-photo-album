@@ -36,7 +36,6 @@ var gallery = {
                 if (folder) {
                     self.openFolder(folder, false);
                 } else if (self.foldersHasMore) {
-                    // Ищем в следующих порциях
                     self.loadMoreFoldersAndFind(folderId);
                 } else {
                     self.showMainPage();
@@ -101,7 +100,6 @@ var gallery = {
         var container = document.getElementById('folders-container');
         if (!container) return;
         
-        // Удаляем старую кнопку "Загрузить ещё" если есть
         var oldLoadMore = document.getElementById('load-more-folders-container');
         if (oldLoadMore) oldLoadMore.remove();
         
@@ -110,7 +108,6 @@ var gallery = {
             return;
         }
         
-        // Рендерим папки
         var html = '';
         for (var i = 0; i < self.folders.length; i++) {
             html += self.createFolderCard(self.folders[i]);
@@ -118,7 +115,6 @@ var gallery = {
         
         container.innerHTML = html;
         
-        // Навешиваем обработчики
         for (var j = 0; j < self.folders.length; j++) {
             (function(folder) {
                 var card = document.getElementById('folder-' + folder.id);
@@ -133,7 +129,6 @@ var gallery = {
             })(self.folders[j]);
         }
         
-        // Добавляем кнопку "Загрузить ещё" ОТДЕЛЬНО, вне списка папок
         if (self.foldersHasMore) {
             var loadMoreContainer = document.createElement('div');
             loadMoreContainer.id = 'load-more-folders-container';
@@ -147,14 +142,13 @@ var gallery = {
             };
         }
         
-        // Инициализируем сортировку только если все загружено
         if (!self.foldersHasMore && api.isAdmin()) {
             if (typeof admin !== 'undefined') {
                 admin.initSortable();
             }
         }
     },
-    
+
     loadMoreFolders: function() {
         var self = this;
         if (this.isLoadingMore || !this.foldersHasMore) return;
@@ -167,8 +161,6 @@ var gallery = {
             var newFolders = response.folders || [];
             self.foldersHasMore = response.hasMore || false;
             self.foldersOffset += newFolders.length;
-            
-            // Добавляем новые папки
             self.folders = self.folders.concat(newFolders);
             
             self.isLoadingMore = false;
@@ -389,7 +381,7 @@ var gallery = {
             self.photosHasMore = response.hasMore || false;
             self.photosOffset = photos.length;
             self.currentPhotos = photos;
-            self.visiblePhotos = photos; // Сервер уже отфильтровал
+            self.visiblePhotos = photos;
             
             self.renderPhotos();
         });
@@ -400,7 +392,6 @@ var gallery = {
         var grid = document.getElementById('photos-grid');
         if (!grid) return;
         
-        // Удаляем старую кнопку
         var oldLoadMore = document.getElementById('load-more-photos-container');
         if (oldLoadMore) oldLoadMore.remove();
         
@@ -409,14 +400,12 @@ var gallery = {
             return;
         }
         
-        // Рендерим фото
         var html = '';
         for (var i = 0; i < self.visiblePhotos.length; i++) {
             html += self.createPhotoItem(self.visiblePhotos[i], i);
         }
         grid.innerHTML = html;
         
-        // Добавляем кнопку "Загрузить ещё" ОТДЕЛЬНО
         if (self.photosHasMore) {
             var loadMoreContainer = document.createElement('div');
             loadMoreContainer.id = 'load-more-photos-container';
@@ -509,6 +498,49 @@ var gallery = {
             }
         };
         document.addEventListener('keydown', this.keyHandler);
+        
+        // Swipe для мобильных
+        var touchStartX = 0;
+        var touchEndX = 0;
+        var touchStartY = 0;
+        var touchEndY = 0;
+        
+        var viewerEl = document.getElementById('fullscreen-viewer');
+        
+        function handleTouchStart(e) {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }
+        
+        function handleTouchEnd(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            handleSwipe();
+        }
+        
+        function handleSwipe() {
+            var diffX = touchStartX - touchEndX;
+            var diffY = touchStartY - touchEndY;
+            
+            // Проверяем, что свайп горизонтальный (не вертикальный)
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                if (diffX > 0) {
+                    // Свайп влево — следующее фото
+                    self.nextPhoto();
+                } else {
+                    // Свайп вправо — предыдущее фото
+                    self.prevPhoto();
+                }
+            }
+        }
+        
+        // Удаляем старые обработчики если есть
+        viewerEl.removeEventListener('touchstart', handleTouchStart);
+        viewerEl.removeEventListener('touchend', handleTouchEnd);
+        
+        // Добавляем новые
+        viewerEl.addEventListener('touchstart', handleTouchStart, false);
+        viewerEl.addEventListener('touchend', handleTouchEnd, false);
     },
 
     closeFullscreen: function() {
