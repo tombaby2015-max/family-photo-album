@@ -99,7 +99,6 @@
     max-width: 900px;
     margin: 0 auto;
 }
-
 .admin-panel__buttons .admin-btn {
     width: 200px;
     min-width: 200px;
@@ -404,7 +403,6 @@
     gap: 20px;
     flex: 1;
 }
-
 .photo-item {
     aspect-ratio: 1;
     background: #eee;
@@ -439,187 +437,296 @@
     font-size: 11px;
 }
 
-/* Fullscreen */
+/* ──────────────────────────────────────────────── */
+/* FULLSCREEN ПРОСМОТР — полностью переписанный блок */
+/* ──────────────────────────────────────────────── */
+
 .fullscreen-viewer {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     z-index: 10001;
     display: none;
+    background: rgba(0,0,0,0.92);
     align-items: center;
     justify-content: center;
 }
+
 .fullscreen-viewer__overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.95);
+    inset: 0;
 }
 
-/* ОБЕРТКА для фото и стрелок */
-.fullscreen-viewer__wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    max-width: 95%;
-    max-height: 85vh;
-}
-
-.fullscreen-viewer__image-container {
-    position: relative;
-    z-index: 1;
-    max-width: 100%;
-    max-height: 85vh;
-    touch-action: pan-y;
-}
-.fullscreen-viewer img {
-    max-width: 100%;
-    max-height: 85vh;
-    display: block;
-    border-radius: 4px;
-}
 .fullscreen-viewer__close {
     position: fixed;
-    top: 15px;
-    right: 25px;
+    top: 20px;
+    right: 30px;
+    z-index: 10003;
     background: none;
     border: none;
-    color: #fff;
-    font-size: 36px;
+    color: #ffffff;
+    font-size: 48px;
+    font-weight: 300;
     cursor: pointer;
-    z-index: 2;
-    line-height: 1;
-    opacity: 0.6;
-    transition: opacity 0.3s;
+    opacity: 0.8;
+    transition: opacity 0.2s;
 }
+
 .fullscreen-viewer__close:hover {
     opacity: 1;
 }
 
-/* Навигационные стрелки - внутри wrapper, по краям фото */
+.fullscreen-viewer__wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 96vw;
+    height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fullscreen-viewer__image-container {
+    position: relative;
+    max-width: 100%;
+    max-height: 90vh;
+    z-index: 2;
+}
+
+.fullscreen-viewer img {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    display: block;
+    border-radius: 6px;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.5);
+}
+
 .fullscreen-viewer__nav {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: none;
+    z-index: 10;
+    width: 64px;
+    height: 64px;
+    background: rgba(0,0,0,0.45);
+    color: #ffffff;
+    font-size: 44px;
+    font-weight: 300;
     border: none;
-    color: rgba(255,255,255,0.4);
-    font-size: 40px;
+    border-radius: 50%;
     cursor: pointer;
-    z-index: 2;
-    padding: 15px;
-    line-height: 1;
-    transition: all 0.3s;
-    outline: none !important;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* Убираем обводку при фокусе и нажатии */
-.fullscreen-viewer__nav:focus,
-.fullscreen-viewer__nav:active,
-.fullscreen-viewer__nav:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-    border: none !important;
+    opacity: 0.8;
+    transition: all 0.18s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .fullscreen-viewer__nav:hover {
-    color: #fff;
+    background: rgba(0,0,0,0.7);
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
 }
 
-/* Стрелки прижаты к краям wrapper (к фото) */
-.fullscreen-viewer__prev { 
-    left: 0; 
-}
-.fullscreen-viewer__next { 
-    right: 0; 
+.fullscreen-viewer__prev {
+    left: 0;
 }
 
-/* Кнопки в fullscreen */
+.fullscreen-viewer__next {
+    right: 0;
+}
+
 .fullscreen-viewer__buttons {
     position: fixed;
-    bottom: 15px;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
+    z-index: 10002;
     display: flex;
-    gap: 8px;
-    z-index: 2;
-    background: rgba(0,0,0,0.7);
-    padding: 6px;
-    border-radius: 6px;
-    backdrop-filter: blur(5px);
+    gap: 12px;
+    background: rgba(0,0,0,0.55);
+    padding: 10px 18px;
+    border-radius: 12px;
+    backdrop-filter: blur(6px);
 }
+
 .viewer-btn {
     background: transparent;
     color: #ddd;
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.35);
     padding: 6px 14px;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     transition: all 0.3s;
     white-space: nowrap;
 }
+
 .viewer-btn:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.12);
     color: #fff;
-    border-color: rgba(255,255,255,0.5);
-}
-.viewer-btn.danger {
-    border-color: rgba(231, 76, 60, 0.4);
-    color: #faa;
-}
-.viewer-btn.danger:hover {
-    background: rgba(231, 76, 60, 0.2);
-    border-color: rgba(231, 76, 60, 0.6);
+    border-color: rgba(255,255,255,0.55);
 }
 
-/* Кнопка скачать */
+.viewer-btn.danger {
+    border-color: rgba(231,76,60,0.45);
+    color: #ffaaaa;
+}
+
+.viewer-btn.danger:hover {
+    background: rgba(231,76,60,0.25);
+    border-color: rgba(231,76,60,0.65);
+}
+
 .fullscreen-viewer__download {
     background: transparent;
     color: #ddd;
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.35);
     padding: 6px 14px;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     transition: all 0.3s;
-    white-space: nowrap;
     text-decoration: none;
     display: inline-block;
 }
+
 .fullscreen-viewer__download:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.12);
     color: #fff;
-    border-color: rgba(255,255,255,0.5);
+    border-color: rgba(255,255,255,0.55);
 }
 
-/* Загрузка */
-.loading {
-    text-align: center;
-    padding: 60px;
-    font-size: 18px;
-    color: #666;
-    grid-column: 1 / -1;
-}
-.empty-state {
-    text-align: center;
-    padding: 60px;
-    color: #666;
-    grid-column: 1 / -1;
+/* Медиа-запросы — стрелки НЕ скрываются на мобильных */
+@media (max-width: 1200px) {
+    .photos-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .folder-title-bar h2 {
+        font-size: 28px;
+    }
 }
 
-/* Стрелка на главной */
+@media (max-width: 768px) {
+    .admin-panel__buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    .admin-panel__buttons .admin-btn {
+        width: 90% !important;
+        min-width: 200px !important;
+        max-width: 300px !important;
+    }
+    .folder-content {
+        flex-direction: column;
+        padding: 20px;
+    }
+    .folder-sidebar {
+        width: 100%;
+    }
+    .photos-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .folder-title-bar {
+        padding: 15px 20px;
+        text-align: left;
+    }
+    .folder-title-bar h2 {
+        font-size: 24px;
+    }
+    .preview-editor__btn {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+    .preview-editor__btn.zoom-out,
+    .preview-editor__btn.zoom-in {
+        width: 34px;
+        height: 34px;
+        font-size: 20px;
+    }
+    .fullscreen-viewer__wrapper {
+        height: 100vh;
+        max-width: 100vw;
+    }
+    .fullscreen-viewer img {
+        max-height: 82vh;
+    }
+    .fullscreen-viewer__nav {
+        width: 52px;
+        height: 52px;
+        font-size: 36px;
+    }
+    .fullscreen-viewer__prev {
+        left: 4px;
+    }
+    .fullscreen-viewer__next {
+        right: 4px;
+    }
+    .fullscreen-viewer__close {
+        top: 12px;
+        right: 16px;
+        font-size: 42px;
+    }
+    .fullscreen-viewer__buttons {
+        bottom: 16px;
+        padding: 8px 14px;
+        gap: 10px;
+    }
+    .folder-card__admin-actions,
+    .photo-item__admin-actions {
+        opacity: 1 !important;
+        display: flex !important;
+    }
+    .folder-card__admin-actions button,
+    .photo-item__admin-actions button {
+        padding: 4px 6px;
+        font-size: 11px;
+    }
+}
+
+/* Остальные стили без изменений */
+body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+}
+html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+}
+#main-footer {
+    text-align: center !important;
+    padding: 20px !important;
+    overflow: hidden;
+}
+#main-footer .admin-login-btn {
+    margin: 0 auto !important;
+    display: inline-block !important;
+    float: none !important;
+}
+#admin-panel[style*="display:none"],
+#admin-panel[style*="display: none"] {
+    display: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+#load-more-folders-container,
+#load-more-photos-container {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+#photo-upload {
+    position: absolute;
+    left: -9999px;
+    opacity: 0;
+}
 .t-cover__arrow-wrapper {
     cursor: pointer;
 }
-
-/* Кнопка обновления */
 .refresh-btn {
     background: transparent;
     border: 1px solid rgba(0,0,0,0.3);
@@ -635,192 +742,4 @@
     background: #000;
     color: #fff;
     border-color: #000;
-}
-
-/* Базовые стили */
-body {
-    overflow-x: hidden;
-    width: 100%;
-    max-width: 100vw;
-}
-
-html, body {
-    overflow-x: hidden !important;
-    width: 100% !important;
-    max-width: 100vw !important;
-}
-
-/* Кнопка Админ по центру */
-#main-footer {
-    text-align: center !important;
-    padding: 20px !important;
-    overflow: hidden;
-}
-
-#main-footer .admin-login-btn {
-    margin: 0 auto !important;
-    display: inline-block !important;
-    float: none !important;
-}
-
-/* Если админ-панель скрыта — не занимает место */
-#admin-panel[style*="display:none"],
-#admin-panel[style*="display: none"] {
-    display: none !important;
-    height: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-/* Проверка ширины элементов */
-#load-more-folders-container,
-#load-more-photos-container {
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-/* Для Оперы - принудительно открывать выбор файла */
-#photo-upload {
-    position: absolute;
-    left: -9999px;
-    opacity: 0;
-}
-
-/* ==================== */
-/* МЕДИА-ЗАПРОСЫ        */
-/* ==================== */
-
-/* Планшеты */
-@media (max-width: 1200px) {
-    .photos-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    .folder-title-bar h2 {
-        font-size: 28px;
-    }
-}
-
-/* Мобильные устройства */
-@media (max-width: 768px) {
-    /* Админ-панель на мобильных */
-    .admin-panel__buttons {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .admin-panel__buttons .admin-btn {
-        width: 90% !important;
-        min-width: 200px !important;
-        max-width: 300px !important;
-    }
-    
-    /* Контент папки */
-    .folder-content {
-        flex-direction: column;
-        padding: 20px;
-    }
-    .folder-sidebar {
-        width: 100%;
-    }
-    
-    /* Сетка фото */
-    .photos-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-    
-    /* Заголовок папки */
-    .folder-title-bar {
-        padding: 15px 20px;
-        text-align: left;
-    }
-    .folder-title-bar h2 {
-        font-size: 24px;
-    }
-    
-    /* Редактор превью */
-    .preview-editor__btn {
-        width: 30px;
-        height: 30px;
-        font-size: 14px;
-    }
-    .preview-editor__btn.zoom-out,
-    .preview-editor__btn.zoom-in {
-        width: 34px;
-        height: 34px;
-        font-size: 20px;
-    }
-    
-    /* Fullscreen - убираем стрелки, добавляем свайп */
-    .fullscreen-viewer__prev,
-    .fullscreen-viewer__next {
-        display: none !important;
-    }
-    
-    .fullscreen-viewer__wrapper {
-        width: 100%;
-        height: 100%;
-        max-width: 100%;
-        max-height: 100%;
-    }
-    
-    .fullscreen-viewer__image-container {
-        width: 100%;
-        height: 100%;
-        max-width: 100%;
-        max-height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .fullscreen-viewer img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-    }
-    
-    .fullscreen-viewer__close {
-        top: 10px;
-        right: 15px;
-        font-size: 30px;
-        background: rgba(0,0,0,0.5);
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .fullscreen-viewer__buttons {
-        bottom: 20px;
-        padding: 10px;
-    }
-    
-    /* На мобильных кнопки админа видны всегда */
-    .folder-card__admin-actions,
-    .photo-item__admin-actions {
-        opacity: 1 !important;
-        display: flex !important;
-    }
-    
-    .folder-card__admin-actions button,
-    .photo-item__admin-actions button {
-        padding: 4px 6px;
-        font-size: 11px;
-    }
-    
-    /* Главная страница - стрелка видна */
-    .t-cover {
-        height: 90vh !important;
-    }
-    .t-cover__carrier,
-    .t-cover__filter,
-    .t-cover__wrapper {
-        height: 90vh !important;
-    }
-    .t-cover__arrow {
-        bottom: 80px !important;
-    }
 }
