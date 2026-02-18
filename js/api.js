@@ -150,4 +150,16 @@ var api = {
         }).then(function(response) { return response.json(); })
           .catch(function() { return null; });
     },
+    // Полное удаление хранилища
+    deleteStorage: function() {
+        return fetch(API_BASE + '/admin/storage', {
+            method: 'DELETE',
+            headers: this.getHeaders(true)
+        }).then(function(response) { 
+            return response.json(); 
+        }).catch(function() { 
+            return { success: false, error: 'Ошибка соединения' }; 
+        });
+    },
+
 };
