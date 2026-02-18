@@ -33,7 +33,7 @@
 </head>
 <body class="t-body" style="margin:0;">
 
-    <!-- COVER - точная копия структуры из эталона -->
+    <!-- COVER - только для главной страницы -->
     <div id="rec-cover" class="r t-rec" style="" data-animationappear="off" data-record-type="18">
         <div class="t-cover" id="recorddiv-cover" bgimgfield="img" style="height:100vh;background-image:url('https://thb.tildacdn.ink/tild3730-6566-4766-b165-306164333335/-/resize/20x/photo-1499002238440-.jpg');">
             <div class="t-cover__carrier" id="coverCarry" data-content-cover-id="rec-cover" data-content-cover-bg="https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg" data-display-changed="true" data-content-cover-height="100vh" data-content-cover-parallax="fixed" data-content-use-image-for-mobile-cover="" style="height:100vh;" itemscope itemtype="http://schema.org/ImageObject">
@@ -52,7 +52,6 @@
                     </div>
                 </div>
             </div>
-            <!-- arrow -->
             <div class="t-cover__arrow" onclick="scrollToFolders()">
                 <div class="t-cover__arrow-wrapper t-cover__arrow-wrapper_animated">
                     <div class="t-cover__arrow_mobile">
@@ -64,7 +63,6 @@
                     </div>
                 </div>
             </div>
-            <!-- arrow -->
         </div>
         <style>#rec-cover .t001__uptitle{text-transform:uppercase;}</style>
     </div>
@@ -89,7 +87,7 @@
             </div>
         </div>
 
-        <!-- ПАПКИ - точная копия структуры t214 из эталона -->
+        <!-- ПАПКИ -->
         <div id="rec-folders" class="r t-rec t-rec_pt_30" style="padding-top:30px;" data-record-type="147">
             <div class="t214">
                 <ul id="folders-container" class="t214__container t-card__container t-container t-container_flex">
@@ -98,6 +96,7 @@
             </div>
         </div>
 
+        <!-- РАЗДЕЛИТЕЛЬ -->
         <div id="rec-divider" class="r t-rec t-rec_pt_60 t-rec_pb_60" style="padding-top:60px;padding-bottom:60px;" data-record-type="363">
             <div class="t029">
                 <div class="t029__container t-container">
@@ -113,7 +112,7 @@
         </div>
     </div>
 
-    <!-- СТРАНИЦА ПАПКИ С ФОТО -->
+    <!-- СТРАНИЦА ПАПКИ С ФОТО - без cover и без футера -->
     <div id="folder-page" style="display:none;">
         <div class="folder-cover-strip">
             <div class="folder-cover-strip__image" id="folder-cover-image"></div>
@@ -176,12 +175,10 @@
         </div>
     </div>
 
-    <!-- ФУТЕР - точная копия структуры из эталона -->
-    <div id="tildacopy" class="t-tildalabel t-tildalabel-free">
+    <!-- ФУТЕР - только для главной страницы, внутри main-page -->
+    <div id="main-footer" class="t-tildalabel t-tildalabel-free">
         <div class="t-tildalabel-free__main">
-            <a href="#" onclick="admin.openModal(); return false;" style="padding-bottom:12px; display: block;">
-                <span style="display: inline-block; padding: 10px 20px; font-size: 13px; border-radius: 50px; background-color: #fff; color:#000; text-decoration: none;">Админ</span>
-            </a>
+            <a href="#" onclick="admin.openModal(); return false;" style="display: inline-block; padding: 10px 20px; font-size: 13px; border-radius: 50px; background-color: #fff; color:#000; text-decoration: none; margin: 20px 0;">Админ</a>
         </div>
     </div>
 
