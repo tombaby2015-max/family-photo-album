@@ -328,7 +328,18 @@ var gallery = {
         var coverImage = document.getElementById('folder-cover-image');
         var titleText = document.getElementById('folder-title-text');
         
-        if (coverSection) coverSection.style.display = 'none';
+        // ИСПРАВЛЕНО: скрываем cover и футер полностью (включая мобильные)
+        if (coverSection) {
+            coverSection.style.display = 'none';
+            // Для мобильных - принудительно скрываем все внутренние элементы
+            var carrier = coverSection.querySelector('.t-cover__carrier');
+            var filter = coverSection.querySelector('.t-cover__filter');
+            var wrapper = coverSection.querySelector('.t-cover__wrapper');
+            if (carrier) carrier.style.display = 'none';
+            if (filter) filter.style.display = 'none';
+            if (wrapper) wrapper.style.display = 'none';
+        }
+        
         if (mainPage) mainPage.style.display = 'none';
         if (mainFooter) mainFooter.style.display = 'none';
         if (folderPage) folderPage.style.display = 'block';
@@ -363,7 +374,18 @@ var gallery = {
         var folderPage = document.getElementById('folder-page');
         
         if (folderPage) folderPage.style.display = 'none';
-        if (coverSection) coverSection.style.display = 'block';
+        
+        // ИСПРАВЛЕНО: показываем cover полностью (включая мобильные)
+        if (coverSection) {
+            coverSection.style.display = 'block';
+            var carrier = coverSection.querySelector('.t-cover__carrier');
+            var filter = coverSection.querySelector('.t-cover__filter');
+            var wrapper = coverSection.querySelector('.t-cover__wrapper');
+            if (carrier) carrier.style.display = '';
+            if (filter) filter.style.display = '';
+            if (wrapper) wrapper.style.display = '';
+        }
+        
         if (mainPage) mainPage.style.display = 'block';
         if (mainFooter) mainFooter.style.display = 'block';
         
