@@ -1,19 +1,4 @@
-/* Кнопка Админ в футере */
-.admin-login-btn {
-    background: transparent;
-    border: 1px solid rgba(0,0,0,0.3);
-    padding: 8px 24px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 13px;
-    color: #666;
-    transition: all 0.3s;
-}
-.admin-login-btn:hover {
-    background: #000;
-    color: #fff;
-    border-color: #000;
-}
+/* Кнопка Админ в футере (старая версия - удалена, новая внизу) */
 
 /* Модальное окно входа */
 .admin-modal {
@@ -157,29 +142,48 @@
     padding-bottom: 60px;
 }
 
-/* Карточка папки */
+/* ==================== */
+/* ПАПКИ - как в эталоне t214 */
+/* ==================== */
+
+/* Контейнер папок - используем стили t214 из Tilda */
+#folders-container {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+/* Карточка папки - как t214__col t-item t-card__col t-col t-col_4 */
 .folder-card {
     position: relative;
-    height: 280px;
-    overflow: hidden;
+    width: 33.33%; /* t-col_4 = 4/12 = 33.33% */
+    padding: 0 20px; /* отступы как в t214 */
+    margin-bottom: 40px; /* отступ снизу как в эталоне */
+    box-sizing: border-box;
     cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
-    border-radius: 4px;
+    overflow: visible;
+    height: auto;
 }
-.folder-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-.folder-card.hidden-folder {
-    opacity: 0.5;
-}
+
+/* Внутренний блок с изображением - как t214__blockimg */
 .folder-card__image {
+    position: relative;
     width: 100%;
-    height: 100%;
+    height: 300px; /* фиксированная высота как в эталоне */
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+    overflow: hidden;
 }
+
+/* Скрытые папки */
+.folder-card.hidden-folder {
+    opacity: 0.5;
+}
+
+/* Заголовок папки */
 .folder-card__title {
     position: absolute;
     bottom: 0;
@@ -191,18 +195,23 @@
     font-size: 18px;
     font-weight: 600;
 }
+
+/* Админ-действия */
 .folder-card__admin-actions {
     position: absolute;
     top: 10px;
-    right: 10px;
+    right: 30px; /* учитываем padding 20px + 10px */
     display: flex;
     gap: 5px;
     opacity: 0;
     transition: opacity 0.3s;
+    z-index: 10;
 }
+
 .folder-card:hover .folder-card__admin-actions {
     opacity: 1;
 }
+
 .folder-card__admin-actions button {
     background: rgba(255,255,255,0.95);
     border: none;
@@ -212,6 +221,7 @@
     font-size: 13px;
     transition: all 0.2s;
 }
+
 .folder-card__admin-actions button:hover {
     background: #fff;
     transform: scale(1.1);
@@ -468,7 +478,7 @@
     justify-content: center;
     max-width: 95%;
     max-height: 85vh;
-    padding: 0 80px;    /* ← СТАЛО 80px (больше места для стрелок) */
+    padding: 0 80px; /* Отступы слева и справа для стрелок */
     box-sizing: border-box;
 }
 
@@ -511,16 +521,16 @@
     background: none;
     border: none;
     color: rgba(255,255,255,0.4);
-    font-size: 60px;        /* ← СТАЛО 60px (больше стрелки) */
+    font-size: 60px;        /* Увеличенный размер */
     cursor: pointer;
     z-index: 2;
-    padding: 20px;          /* ← СТАЛО 20px (больше область нажатия) */
+    padding: 20px;
     line-height: 1;
     transition: all 0.3s;
     outline: none !important;
     -webkit-tap-highlight-color: transparent;
-    width: 70px;            /* ← СТАЛО 70px */
-    height: 100px;          /* ← СТАЛО 100px */
+    width: 70px;
+    height: 100px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -541,10 +551,10 @@
 
 /* Стрелки отодвинуты от фото */
 .fullscreen-viewer__prev { 
-    left: -60px;    /* ← СТАЛО -60px (вне wrapper, левее фото) */
+    left: -60px;
 }
 .fullscreen-viewer__next { 
-    right: -60px;   /* ← СТАЛО -60px (вне wrapper, правее фото) */
+    right: -60px;
 }
 
 /* Кнопки в fullscreen */
@@ -657,17 +667,67 @@ html, body {
     max-width: 100vw !important;
 }
 
-/* Кнопка Админ по центру */
+/* ==================== */
+/* ФУТЕР - как в эталоне t-tildalabel */
+/* ==================== */
+
+.t-tildalabel {
+    background-color: #000; /* черный фон как в эталоне */
+    color: #fff;
+    width: 100%;
+    height: auto;
+    padding: 0;
+    text-align: center;
+    clear: both;
+}
+
+.t-tildalabel-free {
+    background-color: #000;
+    padding: 20px 0;
+}
+
+.t-tildalabel-free__main {
+    padding-bottom: 12px;
+    text-align: center;
+}
+
+.t-tildalabel-free__main a {
+    color: #fff;
+    text-decoration: none;
+}
+
+/* Кнопка Админ - как Create a website в эталоне */
+.admin-login-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 13px;
+    border-radius: 50px;
+    background-color: #fff;
+    color: #000;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: inherit;
+    line-height: normal;
+}
+
+.admin-login-btn:hover {
+    background-color: #f0f0f0;
+    transform: scale(1.05);
+}
+
+/* Убираем старые стили для футера */
 #main-footer {
-    text-align: center !important;
-    padding: 20px !important;
+    text-align: center;
+    padding: 0;
     overflow: hidden;
+    background-color: #000;
 }
 
 #main-footer .admin-login-btn {
-    margin: 0 auto !important;
-    display: inline-block !important;
-    float: none !important;
+    margin: 0;
+    float: none;
 }
 
 /* Если админ-панель скрыта — не занимает место */
@@ -704,6 +764,11 @@ html, body {
     }
     .folder-title-bar h2 {
         font-size: 28px;
+    }
+    
+    /* Папки - 2 в ряд на планшетах */
+    .folder-card {
+        width: 50%;
     }
 }
 
@@ -758,6 +823,23 @@ html, body {
         font-size: 20px;
     }
     
+    /* Папки в одну колонку на мобильных */
+    .folder-card {
+        width: 100%;
+        padding: 0 10px;
+        margin-bottom: 20px;
+    }
+    
+    .folder-card__image {
+        height: 250px;
+    }
+    
+    /* Админ-кнопки всегда видны на мобильных */
+    .folder-card__admin-actions {
+        opacity: 1;
+        right: 20px;
+    }
+    
     /* Fullscreen - убираем стрелки, добавляем свайп */
     .fullscreen-viewer__prev,
     .fullscreen-viewer__next {
@@ -807,13 +889,11 @@ html, body {
     }
     
     /* На мобильных кнопки админа видны всегда */
-    .folder-card__admin-actions,
     .photo-item__admin-actions {
         opacity: 1 !important;
         display: flex !important;
     }
     
-    .folder-card__admin-actions button,
     .photo-item__admin-actions button {
         padding: 4px 6px;
         font-size: 11px;
@@ -830,5 +910,15 @@ html, body {
     }
     .t-cover__arrow {
         bottom: 80px !important;
+    }
+    
+    /* Футер на мобильных */
+    .t-tildalabel-free {
+        padding: 15px 0;
+    }
+    
+    .admin-login-btn {
+        padding: 8px 16px;
+        font-size: 12px;
     }
 }
