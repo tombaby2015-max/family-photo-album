@@ -141,7 +141,25 @@
             </div>
         </div>
     </div>
-        
+
+    <!-- МОДАЛЬНОЕ ОКНО ОЧИСТКИ ХРАНИЛИЩА -->
+    <div id="clear-storage-modal" class="admin-modal" style="display:none; z-index: 10001;">
+        <div class="admin-modal__overlay" onclick="admin.closeClearStorageModal()"></div>
+        <div class="admin-modal__content" style="border: 3px solid #e74c3c; max-width: 450px;">
+            <h3 style="color: #e74c3c; margin: 0 0 15px 0; font-size: 22px;">⚠️ ВНИМАНИЕ!</h3>
+            <p style="color: #666; margin-bottom: 25px; font-size: 15px; line-height: 1.5;">
+                Это действие <strong>удалит ВСЕ</strong> папки и фотографии из хранилища.<br>
+                Данные <strong>нельзя будет восстановить</strong>!
+            </p>
+            <input type="password" id="clear-storage-password" placeholder="Введите пароль администратора" style="margin-bottom: 25px;">
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button onclick="admin.confirmClearStorage()" style="background: #e74c3c; color: #fff; border: none; padding: 12px 30px; border-radius: 4px; font-size: 16px; cursor: pointer; flex: 1;">🗑️ Удалить всё</button>
+                <button onclick="admin.closeClearStorageModal()" style="background: #999; color: #fff; border: none; padding: 12px 30px; border-radius: 4px; font-size: 16px; cursor: pointer; flex: 1;">Отмена</button>
+            </div>
+            <p id="clear-storage-error" class="admin-error" style="margin-top: 15px;"></p>
+        </div>
+    </div>
+    
     <!-- МОДАЛЬНОЕ ОКНО ВХОДА -->
     <div id="admin-modal" class="admin-modal" style="display:none;">
         <div class="admin-modal__overlay" onclick="admin.closeModal()"></div>
