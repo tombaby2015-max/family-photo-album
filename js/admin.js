@@ -68,6 +68,52 @@ var admin = {
         gallery.loadFolders();
     },
 
+    // Открыть модальное окно очистки хранилища
+    openClearStorageModal: function() {
+        document.getElementById('clear-storage-modal').style.display = 'flex';
+        document.getElementById('clear-storage-password').value = '';
+        document.getElementById('clear-storage-error').textContent = '';
+        document.getElementById('clear-storage-password').focus();
+    },
+
+    // Закрыть модальное окно очистки хранилища
+    closeClearStorageModal: function() {
+        document.getElementById('clear-storage-modal').style.display = 'none';
+    },
+
+    // Подтверждение очистки хранилища
+    confirmClearStorage: function() {
+        var password = document.getElementById('clear-storage-password').value;
+        var errorEl = document.getElementById('clear-storage-error');
+        
+        if (!password) {
+            errorEl.textContent = 'Введите пароль';
+            return;
+        }
+        
+        // Проверяем пароль через API
+        var self = this;
+        api.login(password).then(function(result) {
+            if (!result.success) {
+                errorEl.textContent = 'Неверный пароль';
+                return;
+            }
+            
+            // Пароль верный - очищаем хранилище
+            api.deleteStorage().then(function(result) {
+                if (result.success) {
+                    self.closeClearStorageModal();
+                    alert('✅ Хранилище успешно очищено!\n\nВсе папки и фотографии удалены.');
+                    // Перезагружаем список папок
+                    gallery.folders = [];
+                    gallery.loadFolders();
+                } else {
+                    errorEl.textContent = result.error || 'Ошибка очистки хранилища';
+                }
+            });
+        });
+    },
+    
     hideAdminUI: function() {
         var adminPanel = document.getElementById('admin-panel');
         var folderAdminPanel = document.getElementById('sidebar-admin-buttons');
