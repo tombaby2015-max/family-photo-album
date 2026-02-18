@@ -33,34 +33,40 @@
 </head>
 <body class="t-body" style="margin:0;">
 
-    <!-- COVER - главная страница (с parallax эффектом как в эталоне) -->
-    <div class="t-cover" id="cover-section" style="height:100vh;background-image:url('https://thb.tildacdn.ink/tild3730-6566-4766-b165-306164333335/-/resize/20x/photo-1499002238440-.jpg');">
-        <!-- ИЗМЕНЕНО: добавлен data-content-cover-parallax="fixed" для фиксации фона при скролле -->
-        <div class="t-cover__carrier" id="coverCarry" data-content-cover-id="cover-section" data-content-cover-bg="https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg" data-content-cover-height="100vh" data-content-cover-parallax="fixed" style="height:100vh; background:url('https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg') center/cover no-repeat;"></div>
-        <div class="t-cover__filter" style="height:100vh;background-image: linear-gradient(to bottom, rgba(0,0,0,0.30), rgba(0,0,0,0.70));"></div>
-        <div class="t-container">
-            <div class="t-col t-col_12">
-                <div class="t-cover__wrapper t-valign_middle" style="height:100vh;">
-                    <div class="t001 t-align_center">
-                        <div class="t001__wrapper" data-hook-content="covercontent">
-                            <div class="t001__title t-title t-title_xl" style="text-transform:uppercase;"><strong>ФОТОАЛЬБОМ</strong></div>
+    <!-- COVER - точная копия структуры из эталона -->
+    <div id="rec-cover" class="r t-rec" style="" data-animationappear="off" data-record-type="18">
+        <div class="t-cover" id="recorddiv-cover" bgimgfield="img" style="height:100vh;background-image:url('https://thb.tildacdn.ink/tild3730-6566-4766-b165-306164333335/-/resize/20x/photo-1499002238440-.jpg');">
+            <div class="t-cover__carrier" id="coverCarry" data-content-cover-id="rec-cover" data-content-cover-bg="https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg" data-display-changed="true" data-content-cover-height="100vh" data-content-cover-parallax="fixed" data-content-use-image-for-mobile-cover="" style="height:100vh;" itemscope itemtype="http://schema.org/ImageObject">
+                <meta itemprop="image" content="https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg">
+            </div>
+            <div class="t-cover__filter" style="height:100vh;background-image: linear-gradient(to bottom, rgba(0,0,0,0.30), rgba(0,0,0,0.70));"></div>
+            <div class="t-container">
+                <div class="t-col t-col_12">
+                    <div class="t-cover__wrapper t-valign_middle" style="height:100vh;">
+                        <div class="t001 t-align_center">
+                            <div class="t001__wrapper" data-hook-content="covercontent">
+                                <div class="t001__title t-title t-title_xl" field="title" style="text-transform:uppercase;"><strong>ФОТОАЛЬБОМ</strong></div>
+                                <span class="space"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- ИЗМЕНЕНО: стрелка как в эталоне -->
-        <div class="t-cover__arrow">
-            <div class="t-cover__arrow-wrapper t-cover__arrow-wrapper_animated">
-                <div class="t-cover__arrow_mobile">
-                    <svg role="presentation" class="t-cover__arrow-svg" style="fill:#ffffff;" x="0px" y="0px" width="38.417px" height="18.592px" viewBox="0 0 38.417 18.592" style="enable-background:new 0 0 38.417 18.592;">
-                        <g>
-                            <path d="M19.208,18.592c-0.241,0-0.483-0.087-0.673-0.261L0.327,1.74c-0.408-0.372-0.438-1.004-0.066-1.413c0.372-0.409,1.004-0.439,1.413-0.066L19.208,16.24L36.743,0.261c0.411-0.372,1.042-0.342,1.413,0.066c0.372,0.408,0.343,1.041-0.065,1.413L19.881,18.332C19.691,18.505,19.449,18.592,19.208,18.592z"/>
-                        </g>
-                    </svg>
+            <!-- arrow -->
+            <div class="t-cover__arrow" onclick="scrollToFolders()">
+                <div class="t-cover__arrow-wrapper t-cover__arrow-wrapper_animated">
+                    <div class="t-cover__arrow_mobile">
+                        <svg role="presentation" class="t-cover__arrow-svg" style="fill:#ffffff;" x="0px" y="0px" width="38.417px" height="18.592px" viewBox="0 0 38.417 18.592" style="enable-background:new 0 0 38.417 18.592;">
+                            <g>
+                                <path d="M19.208,18.592c-0.241,0-0.483-0.087-0.673-0.261L0.327,1.74c-0.408-0.372-0.438-1.004-0.066-1.413c0.372-0.409,1.004-0.439,1.413-0.066L19.208,16.24L36.743,0.261c0.411-0.372,1.042-0.342,1.413,0.066c0.372,0.408,0.343,1.041-0.065,1.413L19.881,18.332C19.691,18.505,19.449,18.592,19.208,18.592z"/>
+                            </g>
+                        </svg>
+                    </div>
                 </div>
             </div>
+            <!-- arrow -->
         </div>
+        <style>#rec-cover .t001__uptitle{text-transform:uppercase;}</style>
     </div>
 
     <!-- ГЛАВНАЯ СТРАНИЦА С ПАПКАМИ -->
@@ -83,7 +89,7 @@
             </div>
         </div>
 
-        <!-- ИЗМЕНЕНО: структура как в эталоне t214 -->
+        <!-- ПАПКИ - точная копия структуры t214 из эталона -->
         <div id="rec-folders" class="r t-rec t-rec_pt_30" style="padding-top:30px;" data-record-type="147">
             <div class="t214">
                 <ul id="folders-container" class="t214__container t-card__container t-container t-container_flex">
@@ -92,7 +98,7 @@
             </div>
         </div>
 
-        <div class="r t-rec t-rec_pt_60 t-rec_pb_60" style="padding-top:60px;padding-bottom:60px;">
+        <div id="rec-divider" class="r t-rec t-rec_pt_60 t-rec_pb_60" style="padding-top:60px;padding-bottom:60px;" data-record-type="363">
             <div class="t029">
                 <div class="t029__container t-container">
                     <div class="t029__col t-col t-col_8">
@@ -109,25 +115,20 @@
 
     <!-- СТРАНИЦА ПАПКИ С ФОТО -->
     <div id="folder-page" style="display:none;">
-        <!-- Верхняя полоска - просто фото без текста -->
         <div class="folder-cover-strip">
             <div class="folder-cover-strip__image" id="folder-cover-image"></div>
         </div>
         
-        <!-- Название папки под полоской -->
         <div class="folder-title-bar">
             <h2 id="folder-title-text"></h2>
         </div>
 
-        <!-- Контент папки -->
         <div class="folder-content">
-            <!-- Левая колонка с кнопкой назад и админ-кнопками -->
             <div class="folder-sidebar">
                 <a href="#" class="back-link" onclick="gallery.showMainPage(); return false;">
                     <span class="back-arrow">←</span>Назад к папкам
                 </a>
                 
-                <!-- Админ-кнопки в сайдбаре -->
                 <div class="sidebar-admin-buttons" id="sidebar-admin-buttons" style="display:none;">
                     <button class="admin-btn" onclick="admin.uploadPhoto()">+ Загрузить фото</button>
                     <input type="file" id="photo-upload" multiple accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;" onchange="admin.handlePhotoUpload(this)">
@@ -136,7 +137,6 @@
                 </div>
             </div>
             
-            <!-- Сетка фото -->
             <div class="photos-grid" id="photos-grid">
                 <div class="loading">Загрузка фото...</div>
             </div>
@@ -159,7 +159,6 @@
         <div class="fullscreen-viewer__overlay" onclick="gallery.closeFullscreen()"></div>
         <button class="fullscreen-viewer__close" onclick="gallery.closeFullscreen()">×</button>
         
-        <!-- ОБЕРТКА для фото и стрелок -->
         <div class="fullscreen-viewer__wrapper">
             <button class="fullscreen-viewer__nav fullscreen-viewer__prev" onclick="gallery.prevPhoto()">‹</button>
             
@@ -170,7 +169,6 @@
             <button class="fullscreen-viewer__nav fullscreen-viewer__next" onclick="gallery.nextPhoto()">›</button>
         </div>
         
-        <!-- Кнопки для админа и скачать - один ряд -->
         <div class="fullscreen-viewer__buttons" id="fullscreen-buttons">
             <button class="viewer-btn" onclick="admin.setFolderCover()" id="btn-set-cover" style="display:none;">Превью папки</button>
             <a id="download-link" class="fullscreen-viewer__download" href="" download>Скачать</a>
@@ -178,10 +176,12 @@
         </div>
     </div>
 
-    <!-- ИЗМЕНЕНО: ФУТЕР как в эталоне t-tildalabel t-tildalabel-free -->
-    <div id="main-footer" class="t-tildalabel t-tildalabel-free">
+    <!-- ФУТЕР - точная копия структуры из эталона -->
+    <div id="tildacopy" class="t-tildalabel t-tildalabel-free">
         <div class="t-tildalabel-free__main">
-            <a href="#" onclick="admin.openModal(); return false;" class="admin-login-btn" style="display: inline-block; padding: 10px 20px; font-size: 13px; border-radius: 50px; background-color: #fff; color:#000; text-decoration: none;">Админ</a>
+            <a href="#" onclick="admin.openModal(); return false;" style="padding-bottom:12px; display: block;">
+                <span style="display: inline-block; padding: 10px 20px; font-size: 13px; border-radius: 50px; background-color: #fff; color:#000; text-decoration: none;">Админ</span>
+            </a>
         </div>
     </div>
 
