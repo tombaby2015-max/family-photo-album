@@ -68,7 +68,6 @@ var admin = {
         gallery.loadFolders();
     },
 
-    // Открыть модальное окно очистки хранилища
     openClearStorageModal: function() {
         document.getElementById('clear-storage-modal').style.display = 'flex';
         document.getElementById('clear-storage-password').value = '';
@@ -76,12 +75,10 @@ var admin = {
         document.getElementById('clear-storage-password').focus();
     },
 
-    // Закрыть модальное окно очистки хранилища
     closeClearStorageModal: function() {
         document.getElementById('clear-storage-modal').style.display = 'none';
     },
 
-    // Подтверждение очистки хранилища
     confirmClearStorage: function() {
         var password = document.getElementById('clear-storage-password').value;
         var errorEl = document.getElementById('clear-storage-error');
@@ -91,7 +88,6 @@ var admin = {
             return;
         }
         
-        // Проверяем пароль через API
         var self = this;
         api.login(password).then(function(result) {
             if (!result.success) {
@@ -99,12 +95,10 @@ var admin = {
                 return;
             }
             
-            // Пароль верный - очищаем хранилище
             api.deleteStorage().then(function(result) {
                 if (result.success) {
                     self.closeClearStorageModal();
                     alert('✅ Хранилище успешно очищено!\n\nВсе папки и фотографии удалены.');
-                    // Перезагружаем список папок
                     gallery.folders = [];
                     gallery.loadFolders();
                 } else {
@@ -149,8 +143,7 @@ var admin = {
         }
     },
 
-    
-        reloadPage: function() {
+    reloadPage: function() {
         location.reload(true);
     },
     
@@ -278,7 +271,6 @@ var admin = {
             return;
         }
         
-        // Создаём модальное окно для просмотра
         var modal = document.getElementById('storage-viewer');
         if (modal) modal.remove();
         
@@ -312,12 +304,10 @@ var admin = {
             
             var html = '';
             
-            // ПАПКИ
             html += '<h3 style="color:#333;border-bottom:2px solid #333;padding-bottom:10px;">📁 ПАПКИ (' + folders.length + ' шт.)</h3>';
             html += '<table style="width:100%;border-collapse:collapse;margin-bottom:30px;">';
             html += '<tr style="background:#f0f0f0;"><th style="padding:8px;text-align:left;border:1px solid #ddd;">№</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">ID</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">Название</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">Order</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">Topic ID</th><th style="padding:8px;text-align:left;border:1px solid #ddd;">Скрыта</th></tr>';
             
-            // Сортируем по order для наглядности
             folders.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
             
             for (var i = 0; i < folders.length; i++) {
@@ -334,7 +324,6 @@ var admin = {
             
             html += '</table>';
             
-            // ФОТО
             var activePhotos = 0;
             var deletedPhotos = 0;
             var hiddenPhotos = 0;
@@ -433,11 +422,10 @@ var admin = {
         var container = document.getElementById('folders-container');
         if (!container || !api.isAdmin()) return;
         
-        // Проверяем, не мобильное ли устройство
         var isMobile = window.matchMedia("(max-width: 768px)").matches;
         if (isMobile) {
             console.log('На мобильных перетаскивание отключено');
-            return; // Не инициализируем сортировку на телефоне
+            return;
         }
         
         var self = this;
@@ -481,7 +469,6 @@ var admin = {
             if (result && result.success) {
                 console.log('✅ Порядок сохранен, обновлено папок:', result.updated);
                 self.createBackup('Изменение порядка папок');
-                // УБРАЛИ alert('Порядок сохранен! Перезагрузите страницу.');
             } else {
                 console.error('❌ Ошибка сохранения:', result);
                 alert('Ошибка сохранения порядка! Смотрите консоль.');
@@ -576,13 +563,12 @@ var admin = {
     uploadPhoto: function() {
         var input = document.getElementById('photo-upload');
         if (input) {
-            // Принудительно сбрасываем value для Оперы
             input.value = '';
             input.click();
         }
     },
 
-    // ИСПРАВЛЕННЫЙ МЕТОД - загрузка по 3 файла параллельно с задержками между пачками
+    // ПОЛНОСТЬЮ ПЕРЕПИСАННЫЙ МЕТОД - последовательная загрузка с ретраями
     handlePhotoUpload: function(input) {
         var self = this;
         var files = Array.from(input.files);
@@ -593,81 +579,109 @@ var admin = {
         var total = files.length;
         var uploaded = 0;
         var failed = 0;
-        var batchSize = 3; // По 3 файла параллельно
+        var currentIndex = 0;
+        var retryQueue = []; // Очередь для повторных попыток
         
         // Создаем прогресс-бар
         var progressDiv = document.createElement('div');
         progressDiv.id = 'upload-progress';
-        progressDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:30px;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.3);z-index:10002;text-align:center;';
-        progressDiv.innerHTML = '<h3>Загрузка фотографий</h3><p id="upload-status">Подготовка...</p><div style="width:300px;height:20px;background:#eee;border-radius:10px;overflow:hidden;margin:15px 0;"><div id="upload-bar" style="width:0%;height:100%;background:#27ae60;transition:width 0.3s;"></div></div><p id="upload-count">0 / ' + total + '</p>';
+        progressDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:30px;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.3);z-index:10002;text-align:center;max-width:400px;';
+        progressDiv.innerHTML = 
+            '<h3>Загрузка фотографий</h3>' +
+            '<p id="upload-status">Подготовка...</p>' +
+            '<div style="width:300px;height:20px;background:#eee;border-radius:10px;overflow:hidden;margin:15px 0;">' +
+                '<div id="upload-bar" style="width:0%;height:100%;background:#27ae60;transition:width 0.3s;"></div>' +
+            '</div>' +
+            '<p id="upload-count">0 / ' + total + '</p>' +
+            '<p id="upload-retry" style="color:#e67e22;font-size:12px;display:none;">Повторная попытка...</p>';
         document.body.appendChild(progressDiv);
         
-        // Функция загрузки одного файла (используем api.uploadPhoto который принимает File объект)
-        function uploadFile(file) {
-            document.getElementById('upload-status').textContent = 'Загрузка: ' + file.name;
+        function updateProgress() {
+            var percent = Math.round(((uploaded + failed) / total) * 100);
+            var bar = document.getElementById('upload-bar');
+            var count = document.getElementById('upload-count');
+            
+            if (bar) bar.style.width = percent + '%';
+            if (count) count.textContent = uploaded + ' / ' + total + (failed > 0 ? ' (ошибок: ' + failed + ')' : '');
+        }
+        
+        // Функция загрузки одного файла с 3 попытками
+        function tryUploadFile(file, attempt) {
+            attempt = attempt || 1;
+            var maxAttempts = 3;
+            
+            var statusEl = document.getElementById('upload-status');
+            var retryEl = document.getElementById('upload-retry');
+            
+            if (statusEl) statusEl.textContent = 'Загрузка: ' + file.name + (attempt > 1 ? ' (попытка ' + attempt + ')' : '');
+            if (retryEl && attempt > 1) retryEl.style.display = 'block';
+            if (retryEl && attempt === 1) retryEl.style.display = 'none';
             
             return api.uploadPhoto(folderId, file).then(function(result) {
                 if (result && result.id) {
                     uploaded++;
+                    updateProgress();
+                    return true;
                 } else {
-                    console.error('Ошибка загрузки:', file.name, result);
-                    failed++;
+                    throw new Error('Server returned no ID');
                 }
-            }).catch(function(e) {
-                console.error('Исключение:', file.name, e);
-                failed++;
-            }).then(function() {
-                // Обновляем прогресс после каждого файла (успех или ошибка)
-                var percent = Math.round(((uploaded + failed) / total) * 100);
-                document.getElementById('upload-bar').style.width = percent + '%';
-                document.getElementById('upload-count').textContent = (uploaded + failed) + ' / ' + total + (failed > 0 ? ' (ошибок: ' + failed + ')' : '');
+            }).catch(function(error) {
+                console.error('Ошибка загрузки (попытка ' + attempt + '):', file.name, error);
+                
+                if (attempt < maxAttempts) {
+                    // Ждем 2 секунды и пробуем снова
+                    return new Promise(function(resolve) {
+                        setTimeout(function() {
+                            resolve(tryUploadFile(file, attempt + 1));
+                        }, 2000);
+                    });
+                } else {
+                    // Все попытки исчерпаны
+                    failed++;
+                    updateProgress();
+                    console.error('Файл не загружен после ' + maxAttempts + ' попыток:', file.name);
+                    return false;
+                }
             });
         }
         
-        // Загружаем пачками с задержками
-        function uploadBatches() {
-            var index = 0;
-            
-            function processNextBatch() {
-                if (index >= files.length) {
-                    // Все файлы обработаны
-                    setTimeout(function() {
-                        document.body.removeChild(progressDiv);
-                        
-                        if (failed > 0) {
-                            alert('Загружено: ' + uploaded + ' из ' + total + '\nОшибок: ' + failed);
-                        } else {
-                            alert('Успешно загружено: ' + uploaded + ' фотографий');
-                        }
-                        
-                        gallery.loadPhotos(folderId);
-                        input.value = '';
-                    }, 500);
-                    return;
+        // Последовательная загрузка всех файлов
+        function processQueue() {
+            if (currentIndex >= files.length) {
+                // Все файлы обработаны, пробуем повторно загрузить failed
+                if (retryQueue.length > 0 && failed > 0) {
+                    console.log('Повторная попытка для failed файлов:', retryQueue.length);
                 }
                 
-                // Берем следующую пачку файлов
-                var batch = files.slice(index, index + batchSize);
-                index += batchSize;
-                
-                // Загружаем параллельно всю пачку
-                Promise.all(batch.map(function(file) {
-                    return uploadFile(file);
-                })).then(function() {
-                    // Пауза 1 секунда между пачками (кроме последней)
-                    if (index < files.length) {
-                        document.getElementById('upload-status').textContent = 'Пауза перед следующей пачкой...';
-                        setTimeout(processNextBatch, 1000);
+                setTimeout(function() {
+                    var progressDiv = document.getElementById('upload-progress');
+                    if (progressDiv) document.body.removeChild(progressDiv);
+                    
+                    if (failed > 0) {
+                        alert('Загружено: ' + uploaded + ' из ' + total + '\nОшибок: ' + failed + '\n\nПроверьте консоль (F12) для деталей.');
                     } else {
-                        processNextBatch();
+                        alert('✅ Успешно загружено: ' + uploaded + ' фотографий');
                     }
-                });
+                    
+                    gallery.loadPhotos(folderId);
+                    input.value = '';
+                }, 500);
+                return;
             }
             
-            processNextBatch();
+            var file = files[currentIndex];
+            currentIndex++;
+            
+            // Загружаем с ретраями, потом пауза 1.5 секунды перед следующим
+            tryUploadFile(file, 1).then(function() {
+                updateProgress();
+                // Пауза 1.5 секунды между файлами чтобы не перегружать API
+                setTimeout(processQueue, 1500);
+            });
         }
         
-        uploadBatches();
+        // Стартуем загрузку
+        processQueue();
     },
 
     setFolderCover: function() {
@@ -749,7 +763,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (api.isAdmin()) {
         admin.showAdminUI();
         admin.startInactivityTimer();
-        admin.setupBeforeUnload();
     }
     
     var passwordInput = document.getElementById('admin-password');
