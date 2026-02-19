@@ -583,56 +583,72 @@ var admin = {
     },
 
     handlePhotoUpload: function(input) {
-        var files = input.files;
-        if (!files.length) return;
-        
-        if (!gallery || !gallery.currentFolder) {
-            alert('Сначала откройте папку');
-            return;
+    var self = this;
+    var files = Array.from(input.files);
+    
+    if (!files.length) return;
+    
+    var folderId = gallery.currentFolder.id;
+    var total = files.length;
+    var uploaded = 0;
+    var failed = 0;
+    var batchSize = 3;
+    
+    var progressDiv = document.createElement('div');
+    progressDiv.id = 'upload-progress';
+    progressDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:30px;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.3);z-index:10002;text-align:center;';
+    progressDiv.innerHTML = '<h3>Загрузка фотографий</h3><p id="upload-status">Подготовка...</p><div style="width:300px;height:20px;background:#eee;border-radius:10px;overflow:hidden;margin:15px 0;"><div id="upload-bar" style="width:0%;height:100%;background:#27ae60;transition:width 0.3s;"></div></div><p id="upload-count">0 / ' + total + '</p>';
+    document.body.appendChild(progressDiv);
+    
+    async function uploadFile(file) {
+        try {
+            document.getElementById('upload-status').textContent = 'Загрузка: ' + file.name;
+            
+            var fileUrl = await api.getFileUrl(file);
+            var result = await api.uploadPhoto(folderId, fileUrl);
+            
+            if (result && result.id) {
+                uploaded++;
+            } else {
+                console.error('Ошибка загрузки:', file.name, result);
+                failed++;
+            }
+        } catch (e) {
+            console.error('Исключение:', file.name, e);
+            failed++;
         }
         
-        var folderId = gallery.currentFolder.id;
-        var total = files.length;
-        var uploaded = 0;
-        var failed = 0;
+        var percent = Math.round(((uploaded + failed) / total) * 100);
+        document.getElementById('upload-bar').style.width = percent + '%';
+        document.getElementById('upload-count').textContent = (uploaded + failed) + ' / ' + total + (failed > 0 ? ' (ошибок: ' + failed + ')' : '');
+    }
+    
+    async function uploadBatches() {
+        for (var i = 0; i < files.length; i += batchSize) {
+            var batch = files.slice(i, i + batchSize);
+            await Promise.all(batch.map(uploadFile));
+            
+            if (i + batchSize < files.length) {
+                await new Promise(r => setTimeout(r, 1000));
+            }
+        }
         
-        var grid = document.getElementById('photos-grid');
-        if (grid) grid.innerHTML = '<div class="loading">Загрузка: 0/' + total + '...</div>';
-        
-        var self = this;
-        
-        function uploadNext(index) {
-            if (index >= files.length) {
-                setTimeout(function() {
-                    gallery.loadPhotos(folderId);
-                    self.createBackup('Загрузка ' + uploaded + ' фото');
-                    console.log('Загружено ' + uploaded + ' фото, ошибок: ' + failed);
-                }, 2000);
-                
-                input.value = '';
-                return;
+        setTimeout(function() {
+            document.body.removeChild(progressDiv);
+            
+            if (failed > 0) {
+                alert('Загружено: ' + uploaded + ' из ' + total + '\nОшибок: ' + failed);
+            } else {
+                alert('Успешно загружено: ' + uploaded + ' фотографий');
             }
             
-            var file = files[index];
-            
-            api.uploadPhoto(folderId, file).then(function(result) {
-                if (result && result.id) {
-                    uploaded++;
-                } else {
-                    failed++;
-                }
-                if (grid) grid.innerHTML = '<div class="loading">Загрузка: ' + (uploaded + failed) + '/' + total + '...</div>';
-                uploadNext(index + 1);
-            }).catch(function(error) {
-                console.error('Upload error:', error);
-                failed++;
-                if (grid) grid.innerHTML = '<div class="loading">Загрузка: ' + (uploaded + failed) + '/' + total + '...</div>';
-                uploadNext(index + 1);
-            });
-        }
-        
-        uploadNext(0);
-    },
+            gallery.loadPhotos(folderId);
+            input.value = '';
+        }, 500);
+    }
+    
+    uploadBatches();
+},
 
     setFolderCover: function() {
         var img = document.getElementById('fullscreen-image');
