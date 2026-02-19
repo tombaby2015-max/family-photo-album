@@ -181,44 +181,47 @@ var gallery = {
         });
     },
 
-    createFolderCard: function(folder) {
-        var isAdmin = api.isAdmin();
-        var isEditing = this.editingFolder === folder.id;
-        var hiddenClass = folder.hidden ? 'hidden-folder' : '';
-        
-        var bgStyle = this.getFolderBackgroundStyle(folder);
-        
-        var adminActions = '';
-        if (isAdmin && !isEditing) {
-            adminActions = '<div class="folder-card__admin-actions">' +
-                '<button onclick="event.stopPropagation(); admin.toggleFolderHidden(\'' + folder.id + '\', ' + !folder.hidden + ')" title="' + (folder.hidden ? 'Показать' : 'Скрыть') + '">' + (folder.hidden ? '👁' : '🙈') + '</button>' +
-                '<button onclick="event.stopPropagation(); admin.renameFolder(\'' + folder.id + '\', \'' + folder.title + '\')" title="Переименовать">✏️</button>' +
-                '<button onclick="event.stopPropagation(); admin.deleteFolder(\'' + folder.id + '\')" title="Удалить">🗑️</button>' +
-                '<button onclick="event.stopPropagation(); gallery.startEditPreview(\'' + folder.id + '\')" title="Редактировать превью">🖼️</button>' +
-            '</div>';
-        }
-        
-        var previewEditor = '';
-        if (isEditing) {
-            previewEditor = '<div class="preview-editor">' +
-                '<button class="preview-editor__btn up" onclick="gallery.movePreview(0, -10)" title="Вверх">↑</button>' +
-                '<button class="preview-editor__btn down" onclick="gallery.movePreview(0, 10)" title="Вниз">↓</button>' +
-                '<button class="preview-editor__btn left" onclick="gallery.movePreview(-10, 0)" title="Влево">←</button>' +
-                '<button class="preview-editor__btn right" onclick="gallery.movePreview(10, 0)" title="Вправо">→</button>' +
-                '<button class="preview-editor__btn zoom-out" onclick="gallery.zoomPreview(-10)" title="Уменьшить">−</button>' +
-                '<button class="preview-editor__btn zoom-in" onclick="gallery.zoomPreview(10)" title="Увеличить">+</button>' +
-                '<button class="preview-editor__btn save" onclick="gallery.savePreview()" title="Сохранить">Сохранить</button>' +
-            '</div>';
-        }
-        
-        return '<li id="folder-' + folder.id + '" class="t214__col t-item t-card__col t-col t-col_4 folder-card ' + hiddenClass + (isEditing ? ' editing' : '') + '" data-folder-id="' + folder.id + '">' +
-            '<div class="folder-card__image" id="folder-image-' + folder.id + '" style="' + bgStyle + '">' +
-                '<div class="folder-card__title">' + folder.title + '</div>' +
-                adminActions +
-                previewEditor +
-            '</div>' +
-        '</li>';
-    },
+createFolderCard: function(folder) {
+    var isAdmin = api.isAdmin();
+    var isEditing = this.editingFolder === folder.id;
+    var hiddenClass = folder.hidden ? 'hidden-folder' : '';
+    
+    var bgStyle = this.getFolderBackgroundStyle(folder);
+    
+    var adminActions = '';
+    if (isAdmin && !isEditing) {
+        adminActions = '<div class="folder-card__admin-actions">' +
+            '<button onclick="event.stopPropagation(); admin.toggleFolderHidden(\'' + folder.id + '\', ' + !folder.hidden + ')" title="' + (folder.hidden ? 'Показать' : 'Скрыть') + '">' + (folder.hidden ? '👁' : '🙈') + '</button>' +
+            '<button onclick="event.stopPropagation(); admin.renameFolder(\'' + folder.id + '\', \'' + folder.title + '\')" title="Переименовать">✏️</button>' +
+            '<button onclick="event.stopPropagation(); admin.deleteFolder(\'' + folder.id + '\')" title="Удалить">🗑️</button>' +
+            '<button onclick="event.stopPropagation(); gallery.startEditPreview(\'' + folder.id + '\')" title="Редактировать превью">🖼️</button>' +
+        '</div>';
+    }
+    
+    var previewEditor = '';
+    if (isEditing) {
+        previewEditor = '<div class="preview-editor">' +
+            '<button class="preview-editor__btn up" onclick="gallery.movePreview(0, -10)" title="Вверх">↑</button>' +
+            '<button class="preview-editor__btn down" onclick="gallery.movePreview(0, 10)" title="Вниз">↓</button>' +
+            '<button class="preview-editor__btn left" onclick="gallery.movePreview(-10, 0)" title="Влево">←</button>' +
+            '<button class="preview-editor__btn right" onclick="gallery.movePreview(10, 0)" title="Вправо">→</button>' +
+            '<button class="preview-editor__btn zoom-out" onclick="gallery.zoomPreview(-10)" title="Уменьшить">−</button>' +
+            '<button class="preview-editor__btn zoom-in" onclick="gallery.zoomPreview(10)" title="Увеличить">+</button>' +
+            '<button class="preview-editor__btn save" onclick="gallery.savePreview()" title="Сохранить">Сохранить</button>' +
+        '</div>';
+    }
+    
+    // Добавляем количество фото
+    var photoCountText = folder.photoCount ? ' (' + folder.photoCount + ' фото)' : '';
+    
+    return '<li id="folder-' + folder.id + '" class="t214__col t-item t-card__col t-col t-col_4 folder-card ' + hiddenClass + (isEditing ? ' editing' : '') + '" data-folder-id="' + folder.id + '">' +
+        '<div class="folder-card__image" id="folder-image-' + folder.id + '" style="' + bgStyle + '">' +
+            '<div class="folder-card__title">' + folder.title + photoCountText + '</div>' +
+            adminActions +
+            previewEditor +
+        '</div>' +
+    '</li>';
+},
 
     getFolderBackgroundStyle: function(folder) {
         var imageUrl = folder.cover_url || 'https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg';
