@@ -78,11 +78,9 @@
                         <button class="admin-btn" onclick="admin.createFolder()">+ Создать папку</button>
                         <button class="admin-btn" onclick="admin.manualBackup()">💾 Сделать бэкап</button>
                         <button class="admin-btn" onclick="admin.restoreBackup()">📁 Восстановить из бэкапа</button>
-                        <button class="admin-btn" onclick="admin.syncStorage()">🧹 Очистить хранилище</button>
                         <button class="admin-btn" onclick="admin.viewStorage()">👁️ Посмотреть хранилище</button>
                         <button class="admin-btn" onclick="admin.reloadPage()">🔄 Обновить страницу</button>
                         <button class="admin-btn" onclick="admin.openClearStorageModal()" style="background: #e74c3c; color: #fff; border-color: #c0392b; width: 200px;">🗑️ Удалить хранилище</button>
-                        <button onclick="admin.enterSelectionMode()">Выбрать фото для удаления</button>
                         <button class="admin-btn logout" onclick="admin.logout()">Выйти</button>
                     </div>
                 </div>
@@ -114,7 +112,7 @@
         </div>
     </div>
 
-    <!-- СТРАНИЦА ПАПКИ С ФОТО - без cover и без футера -->
+    <!-- СТРАНИЦА ПАПКИ С ФОТО -->
     <div id="folder-page" style="display:none;">
         <div class="folder-cover-strip">
             <div class="folder-cover-strip__image" id="folder-cover-image"></div>
@@ -131,11 +129,21 @@
                 </a>
                 
                 <div class="sidebar-admin-buttons" id="sidebar-admin-buttons" style="display:none;">
+                    <!-- ИСПРАВЛЕНО: onchange вызывает handlePhotoSelection -->
                     <button class="admin-btn" onclick="admin.uploadPhoto()">+ Загрузить фото</button>
-                    <input type="file" id="photo-upload" multiple accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;" onchange="admin.handlePhotoUpload(this)">
+                    <input type="file" id="photo-upload" multiple accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;" onchange="admin.handlePhotoSelection(this)">
                     <button class="admin-btn" onclick="admin.renameFolder()">Переименовать</button>
                     <button class="admin-btn danger" onclick="admin.deleteFolder()">Удалить папку</button>
+                    <!-- Кнопка выбора фото для удаления -->
+                    <button class="admin-btn" onclick="admin.enterSelectionMode()">Выбрать фото</button>
                 </div>
+            </div>
+            
+            <!-- ИСПРАВЛЕНО: добавлен toolbar для массового удаления -->
+            <div id="photo-toolbar" style="display:none; margin-bottom:15px; padding:10px; background:#f8f9fa; border-radius:5px;">
+                <button id="btn-select-all" onclick="admin.toggleSelectAll()" style="background:#3498db;color:#fff;border:none;padding:8px 15px;border-radius:4px;cursor:pointer;margin-right:10px;">☐ Выбрать все</button>
+                <button id="btn-delete-selected" onclick="admin.deleteSelectedPhotos()" style="background:#e74c3c;color:#fff;border:none;padding:8px 15px;border-radius:4px;cursor:pointer;margin-right:10px;">🗑 Удалить выбранные (0)</button>
+                <button onclick="admin.exitSelectionMode()" style="background:#95a5a6;color:#fff;border:none;padding:8px 15px;border-radius:4px;cursor:pointer;">✕ Отмена</button>
             </div>
             
             <div class="photos-grid" id="photos-grid">
@@ -195,7 +203,7 @@
         </div>
     </div>
 
-    <!-- ФУТЕР - только для главной страницы, внутри main-page -->
+    <!-- ФУТЕР -->
     <div id="main-footer" class="t-tildalabel t-tildalabel-free">
         <div class="t-tildalabel-free__main">
             <a href="#" onclick="admin.openModal(); return false;" style="display: inline-block; padding: 10px 20px; font-size: 13px; border-radius: 50px; background-color: #fff; color:#000; text-decoration: none; margin: 20px 0;">Админ</a>
