@@ -401,25 +401,57 @@ createFolderCard: function(folder) {
         this.loadFolders();
     },
 
-    loadPhotos: function(folderId) {
-        var self = this;
-        this.photosOffset = 0;
-        this.currentPhotos = [];
-        this.photosHasMore = false;
+// === НОВАЯ loadPhotos с двумя этапами ===
+loadPhotos: function(folderId, offset) {
+    offset = offset || 0;
+    var self = this;
+    
+    // Показываем загрузку
+    var container = document.getElementById('photos-container');
+    if (offset === 0 && container) {
+        container.innerHTML = '<p>Загрузка...</p>';
+    }
+    
+    // Этап 1: получаем список фото без URL
+    api.getPhotosList(folderId, offset).then(function(result) {
+        if (!result.photos || result.photos.length === 0) {
+            if (offset === 0) {
+                container.innerHTML = '<p>Фотографий пока нет</p>';
+            }
+            return;
+        }
         
-        var grid = document.getElementById('photos-grid');
-        if (grid) grid.innerHTML = '<div class="loading">Загрузка фото...</div>';
+        self.currentPhotos = offset === 0 ? result.photos : self.currentPhotos.concat(result.photos);
+        self.hasMorePhotos = result.hasMore;
         
-        api.getPhotos(folderId, 0).then(function(response) {
-            var photos = response.photos || [];
-            self.photosHasMore = response.hasMore || false;
-            self.photosOffset = photos.length;
-            self.currentPhotos = photos;
-            self.visiblePhotos = photos;
-            
-            self.renderPhotos();
+        // Этап 2: получаем URL для этих фото
+        var photoIds = result.photos.map(function(p) { return p.id; });
+        
+        return api.getPhotosUrls(photoIds);
+    }).then(function(urls) {
+        if (!urls) return;
+        
+        // Добавляем URL к фото
+        self.currentPhotos.forEach(function(photo) {
+            if (urls[photo.id]) {
+                photo.url = urls[photo.id];
+            }
         });
-    },
+        
+        // Рендерим
+        self.renderPhotos(offset > 0);
+        
+        // Кнопка "Загрузить ещё"
+        if (self.hasMorePhotos) {
+            self.showLoadMoreButton(folderId, offset + result.photos.length);
+        }
+    }).catch(function(error) {
+        console.error('Ошибка загрузки фото:', error);
+        if (offset === 0) {
+            container.innerHTML = '<p>Ошибка загрузки</p>';
+        }
+    });
+},
 
     renderPhotos: function() {
         var self = this;
