@@ -181,47 +181,46 @@ var gallery = {
         });
     },
 
-createFolderCard: function(folder) {
-    var isAdmin = api.isAdmin();
-    var isEditing = this.editingFolder === folder.id;
-    var hiddenClass = folder.hidden ? 'hidden-folder' : '';
-    
-    var bgStyle = this.getFolderBackgroundStyle(folder);
-    
-    var adminActions = '';
-    if (isAdmin && !isEditing) {
-        adminActions = '<div class="folder-card__admin-actions">' +
-            '<button onclick="event.stopPropagation(); admin.toggleFolderHidden(\'' + folder.id + '\', ' + !folder.hidden + ')" title="' + (folder.hidden ? 'Показать' : 'Скрыть') + '">' + (folder.hidden ? '👁' : '🙈') + '</button>' +
-            '<button onclick="event.stopPropagation(); admin.renameFolder(\'' + folder.id + '\', \'' + folder.title + '\')" title="Переименовать">✏️</button>' +
-            '<button onclick="event.stopPropagation(); admin.deleteFolder(\'' + folder.id + '\')" title="Удалить">🗑️</button>' +
-            '<button onclick="event.stopPropagation(); gallery.startEditPreview(\'' + folder.id + '\')" title="Редактировать превью">🖼️</button>' +
-        '</div>';
-    }
-    
-    var previewEditor = '';
-    if (isEditing) {
-        previewEditor = '<div class="preview-editor">' +
-            '<button class="preview-editor__btn up" onclick="gallery.movePreview(0, -10)" title="Вверх">↑</button>' +
-            '<button class="preview-editor__btn down" onclick="gallery.movePreview(0, 10)" title="Вниз">↓</button>' +
-            '<button class="preview-editor__btn left" onclick="gallery.movePreview(-10, 0)" title="Влево">←</button>' +
-            '<button class="preview-editor__btn right" onclick="gallery.movePreview(10, 0)" title="Вправо">→</button>' +
-            '<button class="preview-editor__btn zoom-out" onclick="gallery.zoomPreview(-10)" title="Уменьшить">−</button>' +
-            '<button class="preview-editor__btn zoom-in" onclick="gallery.zoomPreview(10)" title="Увеличить">+</button>' +
-            '<button class="preview-editor__btn save" onclick="gallery.savePreview()" title="Сохранить">Сохранить</button>' +
-        '</div>';
-    }
-    
-    // Добавляем количество фото
-    var photoCountText = folder.photoCount ? ' (' + folder.photoCount + ' фото)' : '';
-    
-    return '<li id="folder-' + folder.id + '" class="t214__col t-item t-card__col t-col t-col_4 folder-card ' + hiddenClass + (isEditing ? ' editing' : '') + '" data-folder-id="' + folder.id + '">' +
-        '<div class="folder-card__image" id="folder-image-' + folder.id + '" style="' + bgStyle + '">' +
-            '<div class="folder-card__title">' + folder.title + photoCountText + '</div>' +
-            adminActions +
-            previewEditor +
-        '</div>' +
-    '</li>';
-},
+    createFolderCard: function(folder) {
+        var isAdmin = api.isAdmin();
+        var isEditing = this.editingFolder === folder.id;
+        var hiddenClass = folder.hidden ? 'hidden-folder' : '';
+        
+        var bgStyle = this.getFolderBackgroundStyle(folder);
+        
+        var adminActions = '';
+        if (isAdmin && !isEditing) {
+            adminActions = '<div class="folder-card__admin-actions">' +
+                '<button onclick="event.stopPropagation(); admin.toggleFolderHidden(\'' + folder.id + '\', ' + !folder.hidden + ')" title="' + (folder.hidden ? 'Показать' : 'Скрыть') + '">' + (folder.hidden ? '👁' : '🙈') + '</button>' +
+                '<button onclick="event.stopPropagation(); admin.renameFolder(\'' + folder.id + '\', \'' + folder.title + '\')" title="Переименовать">✏️</button>' +
+                '<button onclick="event.stopPropagation(); admin.deleteFolder(\'' + folder.id + '\')" title="Удалить">🗑️</button>' +
+                '<button onclick="event.stopPropagation(); gallery.startEditPreview(\'' + folder.id + '\')" title="Редактировать превью">🖼️</button>' +
+            '</div>';
+        }
+        
+        var previewEditor = '';
+        if (isEditing) {
+            previewEditor = '<div class="preview-editor">' +
+                '<button class="preview-editor__btn up" onclick="gallery.movePreview(0, -10)" title="Вверх">↑</button>' +
+                '<button class="preview-editor__btn down" onclick="gallery.movePreview(0, 10)" title="Вниз">↓</button>' +
+                '<button class="preview-editor__btn left" onclick="gallery.movePreview(-10, 0)" title="Влево">←</button>' +
+                '<button class="preview-editor__btn right" onclick="gallery.movePreview(10, 0)" title="Вправо">→</button>' +
+                '<button class="preview-editor__btn zoom-out" onclick="gallery.zoomPreview(-10)" title="Уменьшить">−</button>' +
+                '<button class="preview-editor__btn zoom-in" onclick="gallery.zoomPreview(10)" title="Увеличить">+</button>' +
+                '<button class="preview-editor__btn save" onclick="gallery.savePreview()" title="Сохранить">Сохранить</button>' +
+            '</div>';
+        }
+        
+        var photoCountText = folder.photoCount ? ' (' + folder.photoCount + ' фото)' : '';
+        
+        return '<li id="folder-' + folder.id + '" class="t214__col t-item t-card__col t-col t-col_4 folder-card ' + hiddenClass + (isEditing ? ' editing' : '') + '" data-folder-id="' + folder.id + '">' +
+            '<div class="folder-card__image" id="folder-image-' + folder.id + '" style="' + bgStyle + '">' +
+                '<div class="folder-card__title">' + folder.title + photoCountText + '</div>' +
+                adminActions +
+                previewEditor +
+            '</div>' +
+        '</li>';
+    },
 
     getFolderBackgroundStyle: function(folder) {
         var imageUrl = folder.cover_url || 'https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg';
@@ -331,10 +330,8 @@ createFolderCard: function(folder) {
         var coverImage = document.getElementById('folder-cover-image');
         var titleText = document.getElementById('folder-title-text');
         
-        // ИСПРАВЛЕНО: скрываем cover и футер полностью (включая мобильные)
         if (coverSection) {
             coverSection.style.display = 'none';
-            // Для мобильных - принудительно скрываем все внутренние элементы
             var carrier = coverSection.querySelector('.t-cover__carrier');
             var filter = coverSection.querySelector('.t-cover__filter');
             var wrapper = coverSection.querySelector('.t-cover__wrapper');
@@ -378,7 +375,6 @@ createFolderCard: function(folder) {
         
         if (folderPage) folderPage.style.display = 'none';
         
-        // ИСПРАВЛЕНО: показываем cover полностью (включая мобильные)
         if (coverSection) {
             coverSection.style.display = 'block';
             var carrier = coverSection.querySelector('.t-cover__carrier');
@@ -401,62 +397,77 @@ createFolderCard: function(folder) {
         this.loadFolders();
     },
 
-// === НОВАЯ loadPhotos с двумя этапами ===
-loadPhotos: function(folderId, offset) {
-    offset = offset || 0;
-    var self = this;
-    
-    // Показываем загрузку
-    var container = document.getElementById('photos-container');
-    if (offset === 0 && container) {
-        container.innerHTML = '<p>Загрузка...</p>';
-    }
-    
-    // Этап 1: получаем список фото без URL
-    api.getPhotosList(folderId, offset).then(function(result) {
-        if (!result.photos || result.photos.length === 0) {
-            if (offset === 0) {
-                container.innerHTML = '<p>Фотографий пока нет</p>';
-            }
-            return;
+    // === ИСПРАВЛЕННАЯ loadPhotos ===
+    loadPhotos: function(folderId, offset) {
+        offset = offset || 0;
+        var self = this;
+        var result; // ← ИСПРАВЛЕНО: объявляем здесь
+        
+        var container = document.getElementById('photos-container');
+        if (offset === 0 && container) {
+            container.innerHTML = '<p>Загрузка...</p>';
         }
         
-        self.currentPhotos = offset === 0 ? result.photos : self.currentPhotos.concat(result.photos);
-        self.hasMorePhotos = result.hasMore;
-        
-        // Этап 2: получаем URL для этих фото
-        var photoIds = result.photos.map(function(p) { return p.id; });
-        
-        return api.getPhotosUrls(photoIds);
-    }).then(function(urls) {
-        if (!urls) return;
-        
-        // Добавляем URL к фото
-        self.currentPhotos.forEach(function(photo) {
-            if (urls[photo.id]) {
-                photo.url = urls[photo.id];
+        api.getPhotosList(folderId, offset).then(function(response) {
+            result = response; // ← ИСПРАВЛЕНО: сохраняем ответ
+            
+            if (!result.photos || result.photos.length === 0) {
+                if (offset === 0) {
+                    container.innerHTML = '<p>Фотографий пока нет</p>';
+                }
+                return;
+            }
+            
+            self.currentPhotos = offset === 0 ? result.photos : self.currentPhotos.concat(result.photos);
+            self.photosHasMore = result.hasMore;
+            
+            var photoIds = result.photos.map(function(p) { return p.id; });
+            
+            return api.getPhotosUrls(photoIds);
+        }).then(function(urls) {
+            if (!urls) return;
+            
+            self.currentPhotos.forEach(function(photo) {
+                if (urls[photo.id]) {
+                    photo.url = urls[photo.id];
+                }
+            });
+            
+            self.renderPhotos(offset > 0);
+            
+            if (self.photosHasMore) {
+                self.photosOffset = offset + result.photos.length; // ← ИСПРАВЛЕНО
+                self.showLoadMoreButton(folderId, self.photosOffset);
+            }
+        }).catch(function(error) {
+            console.error('Ошибка загрузки фото:', error);
+            if (offset === 0 && container) {
+                container.innerHTML = '<p>Ошибка загрузки</p>';
             }
         });
-        
-        // Рендерим
-        self.renderPhotos(offset > 0);
-        
-        // Кнопка "Загрузить ещё"
-        if (self.hasMorePhotos) {
-            self.showLoadMoreButton(folderId, offset + result.photos.length);
-        }
-    }).catch(function(error) {
-        console.error('Ошибка загрузки фото:', error);
-        if (offset === 0) {
-            container.innerHTML = '<p>Ошибка загрузки</p>';
-        }
-    });
-},
+    },
 
-    renderPhotos: function() {
+    // === ИСПРАВЛЕННАЯ renderPhotos ===
+    renderPhotos: function(append) { // ← ИСПРАВЛЕНО: принимаем параметр
         var self = this;
         var grid = document.getElementById('photos-grid');
         if (!grid) return;
+        
+        // ← ИСПРАВЛЕНО: обновляем visiblePhotos
+        if (!append) {
+            self.visiblePhotos = self.currentPhotos.slice();
+        } else {
+            // При добавлении проверяем, каких фото ещё нет в visiblePhotos
+            var existingIds = {};
+            for (var i = 0; i < self.visiblePhotos.length; i++) {
+                existingIds[self.visiblePhotos[i].id] = true;
+            }
+            for (var j = 0; j < self.currentPhotos.length; j++) {
+                if (!existingIds[self.currentPhotos[j].id]) {
+                    self.visiblePhotos.push(self.currentPhotos[j]);
+                }
+            }
+        }
         
         var oldLoadMore = document.getElementById('load-more-photos-container');
         if (oldLoadMore) oldLoadMore.remove();
@@ -494,20 +505,11 @@ loadPhotos: function(folderId, offset) {
         var btn = document.getElementById('load-more-photos');
         if (btn) btn.textContent = 'Загружается...';
         
-        api.getPhotos(this.currentFolder.id, this.photosOffset).then(function(response) {
-            var newPhotos = response.photos || [];
-            self.photosHasMore = response.hasMore || false;
-            self.photosOffset += newPhotos.length;
-            
-            self.currentPhotos = self.currentPhotos.concat(newPhotos);
-            self.visiblePhotos = self.visiblePhotos.concat(newPhotos);
-            
-            self.isLoadingMore = false;
-            self.renderPhotos();
-        }).catch(function() {
-            self.isLoadingMore = false;
-            if (btn) btn.textContent = '+ Загрузить ещё фотографии';
-        });
+        this.loadPhotos(this.currentFolder.id, this.photosOffset);
+    },
+
+    showLoadMoreButton: function(folderId, offset) {
+        // Эта функция больше не нужна, логика в renderPhotos
     },
 
     createPhotoItem: function(photo, index) {
