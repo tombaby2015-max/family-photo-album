@@ -450,7 +450,7 @@ var gallery = {
     // === ИСПРАВЛЕННАЯ renderPhotos ===
     renderPhotos: function(append) { // ← ИСПРАВЛЕНО: принимаем параметр
         var self = this;
-        var grid = document.getElementById('photos-grid');
+        var grid = document.getElementById('photos-container');
         if (!grid) return;
         
         // ← ИСПРАВЛЕНО: обновляем visiblePhotos
