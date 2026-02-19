@@ -89,14 +89,31 @@ var api = {
           .catch(function() { return null; });
     },
 
-    getPhotos: function(folderId, offset) {
+    // === НОВОЕ: два эндпоинта вместо одного ===
+    
+    // Получаем список фото без URL (этап 1)
+    getPhotosList: function(folderId, offset) {
         offset = offset || 0;
-        return fetch(API_BASE + '/photos?folder_id=' + folderId + '&offset=' + offset, {
+        return fetch(API_BASE + '/photos/list?folder_id=' + folderId + '&offset=' + offset, {
             headers: this.getHeaders(this.isAdmin())
         })
         .then(function(response) { return response.json(); })
         .catch(function() { return { photos: [], hasMore: false, total: 0 }; });
     },
+
+    // Получаем URL для массива ID фото (этап 2)
+    getPhotosUrls: function(photoIds) {
+        return fetch(API_BASE + '/photos/urls', {
+            method: 'POST',
+            headers: this.getHeaders(this.isAdmin()),
+            body: JSON.stringify({ photo_ids: photoIds })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) { return data.urls || {}; })
+        .catch(function() { return {}; });
+    },
+
+    // === УДАЛЕНО: старый getPhotos ===
 
     uploadPhoto: function(folderId, file) {
         var self = this;
@@ -141,7 +158,6 @@ var api = {
         });
     },
 
-    // Массовое обновление порядка папок (одним запросом)
     reorderFolders: function(orders) {
         return fetch(API_BASE + '/folders/reorder', {
             method: 'POST',
@@ -150,7 +166,7 @@ var api = {
         }).then(function(response) { return response.json(); })
           .catch(function() { return null; });
     },
-    // Полное удаление хранилища
+
     deleteStorage: function() {
         return fetch(API_BASE + '/admin/storage', {
             method: 'DELETE',
@@ -161,5 +177,7 @@ var api = {
             return { success: false, error: 'Ошибка соединения' }; 
         });
     },
+
+    // === УДАЛЕНО: syncStorage ===
 
 };
