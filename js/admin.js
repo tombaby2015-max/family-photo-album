@@ -582,73 +582,93 @@ var admin = {
         }
     },
 
+    // ИСПРАВЛЕННЫЙ МЕТОД - загрузка по 3 файла параллельно с задержками между пачками
     handlePhotoUpload: function(input) {
-    var self = this;
-    var files = Array.from(input.files);
-    
-    if (!files.length) return;
-    
-    var folderId = gallery.currentFolder.id;
-    var total = files.length;
-    var uploaded = 0;
-    var failed = 0;
-    var batchSize = 3;
-    
-    var progressDiv = document.createElement('div');
-    progressDiv.id = 'upload-progress';
-    progressDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:30px;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.3);z-index:10002;text-align:center;';
-    progressDiv.innerHTML = '<h3>Загрузка фотографий</h3><p id="upload-status">Подготовка...</p><div style="width:300px;height:20px;background:#eee;border-radius:10px;overflow:hidden;margin:15px 0;"><div id="upload-bar" style="width:0%;height:100%;background:#27ae60;transition:width 0.3s;"></div></div><p id="upload-count">0 / ' + total + '</p>';
-    document.body.appendChild(progressDiv);
-    
-    async function uploadFile(file) {
-        try {
+        var self = this;
+        var files = Array.from(input.files);
+        
+        if (!files.length) return;
+        
+        var folderId = gallery.currentFolder.id;
+        var total = files.length;
+        var uploaded = 0;
+        var failed = 0;
+        var batchSize = 3; // По 3 файла параллельно
+        
+        // Создаем прогресс-бар
+        var progressDiv = document.createElement('div');
+        progressDiv.id = 'upload-progress';
+        progressDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:30px;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.3);z-index:10002;text-align:center;';
+        progressDiv.innerHTML = '<h3>Загрузка фотографий</h3><p id="upload-status">Подготовка...</p><div style="width:300px;height:20px;background:#eee;border-radius:10px;overflow:hidden;margin:15px 0;"><div id="upload-bar" style="width:0%;height:100%;background:#27ae60;transition:width 0.3s;"></div></div><p id="upload-count">0 / ' + total + '</p>';
+        document.body.appendChild(progressDiv);
+        
+        // Функция загрузки одного файла (используем api.uploadPhoto который принимает File объект)
+        function uploadFile(file) {
             document.getElementById('upload-status').textContent = 'Загрузка: ' + file.name;
             
-            var fileUrl = await api.getFileUrl(file);
-            var result = await api.uploadPhoto(folderId, fileUrl);
-            
-            if (result && result.id) {
-                uploaded++;
-            } else {
-                console.error('Ошибка загрузки:', file.name, result);
+            return api.uploadPhoto(folderId, file).then(function(result) {
+                if (result && result.id) {
+                    uploaded++;
+                } else {
+                    console.error('Ошибка загрузки:', file.name, result);
+                    failed++;
+                }
+            }).catch(function(e) {
+                console.error('Исключение:', file.name, e);
                 failed++;
-            }
-        } catch (e) {
-            console.error('Исключение:', file.name, e);
-            failed++;
+            }).then(function() {
+                // Обновляем прогресс после каждого файла (успех или ошибка)
+                var percent = Math.round(((uploaded + failed) / total) * 100);
+                document.getElementById('upload-bar').style.width = percent + '%';
+                document.getElementById('upload-count').textContent = (uploaded + failed) + ' / ' + total + (failed > 0 ? ' (ошибок: ' + failed + ')' : '');
+            });
         }
         
-        var percent = Math.round(((uploaded + failed) / total) * 100);
-        document.getElementById('upload-bar').style.width = percent + '%';
-        document.getElementById('upload-count').textContent = (uploaded + failed) + ' / ' + total + (failed > 0 ? ' (ошибок: ' + failed + ')' : '');
-    }
-    
-    async function uploadBatches() {
-        for (var i = 0; i < files.length; i += batchSize) {
-            var batch = files.slice(i, i + batchSize);
-            await Promise.all(batch.map(uploadFile));
+        // Загружаем пачками с задержками
+        function uploadBatches() {
+            var index = 0;
             
-            if (i + batchSize < files.length) {
-                await new Promise(r => setTimeout(r, 1000));
+            function processNextBatch() {
+                if (index >= files.length) {
+                    // Все файлы обработаны
+                    setTimeout(function() {
+                        document.body.removeChild(progressDiv);
+                        
+                        if (failed > 0) {
+                            alert('Загружено: ' + uploaded + ' из ' + total + '\nОшибок: ' + failed);
+                        } else {
+                            alert('Успешно загружено: ' + uploaded + ' фотографий');
+                        }
+                        
+                        gallery.loadPhotos(folderId);
+                        input.value = '';
+                    }, 500);
+                    return;
+                }
+                
+                // Берем следующую пачку файлов
+                var batch = files.slice(index, index + batchSize);
+                index += batchSize;
+                
+                // Загружаем параллельно всю пачку
+                Promise.all(batch.map(function(file) {
+                    return uploadFile(file);
+                })).then(function() {
+                    // Пауза 1 секунда между пачками (кроме последней)
+                    if (index < files.length) {
+                        document.getElementById('upload-status').textContent = 'Пауза перед следующей пачкой...';
+                        setTimeout(processNextBatch, 1000);
+                    } else {
+                        processNextBatch();
+                    }
+                });
             }
+            
+            processNextBatch();
         }
         
-        setTimeout(function() {
-            document.body.removeChild(progressDiv);
-            
-            if (failed > 0) {
-                alert('Загружено: ' + uploaded + ' из ' + total + '\nОшибок: ' + failed);
-            } else {
-                alert('Успешно загружено: ' + uploaded + ' фотографий');
-            }
-            
-            gallery.loadPhotos(folderId);
-            input.value = '';
-        }, 500);
-    }
-    
-    uploadBatches();
-},
+        uploadBatches();
+    },
 
     setFolderCover: function() {
         var img = document.getElementById('fullscreen-image');
