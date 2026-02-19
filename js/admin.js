@@ -3,7 +3,6 @@ var admin = {
     inactivityTimeout: 15 * 60 * 1000,
     isAdminActive: false,
     
-    // === НОВОЕ: Очередь загрузки ===
     uploadQueue: [],
     isUploading: false,
     uploadStats: {
@@ -129,15 +128,13 @@ var admin = {
         this.isAdminActive = false;
     },
 
-    // === ИСПРАВЛЕННЫЙ ТАЙМЕР: сбрасывается при активности ===
     startInactivityTimer: function() {
         this.stopInactivityTimer();
         var self = this;
         this.inactivityTimer = setTimeout(function() {
-            // Не выкидываем если идёт загрузка
             if (self.isUploading) {
-                console.log('Загрузка активна, таймер бездействия отложен');
-                self.startInactivityTimer(); // Перезапускаем
+                console.log('Загрузка активна, таймер отложен');
+                self.startInactivityTimer();
                 return;
             }
             alert('Вы автоматически вышли из админки из-за бездействия');
@@ -385,57 +382,9 @@ var admin = {
             document.getElementById('storage-content').innerHTML = '<p style="color:red;">Ошибка загрузки: ' + error.message + '</p>';
         });
     },
-    
-    syncStorage: function() {
-        var self = this;
-        var token = api.getToken();
-        
-        if (!token) {
-            alert('Ошибка: не авторизован');
-            return;
-        }
-        
-        if (!confirm('🧹 ОЧИСТКА ХРАНИЛИЩА\n\nБудет удалено из KV:\n- Папки, темы которых не найдены в Telegram\n- Фото, файлы которых не найдены в Telegram\n\n⚠️ Восстановить можно только из бэкапа!\n\nПродолжить?')) {
-            return;
-        }
-        
-        alert('⏳ Очистка началась...\n\nПодождите 1-2 минуты');
-        
-        fetch(API_BASE + '/admin/sync', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-            }
-        })
-        .then(function(response) { return response.json(); })
-        .then(function(result) {
-            if (result.success) {
-                var msg = '✅ Очистка завершена!\n\n';
-                msg += '📁 Папок проверено: ' + result.foldersChecked + '\n';
-                msg += '🗑️ Папок удалено: ' + result.foldersRemoved + '\n\n';
-                msg += '📷 Фото проверено: ' + result.photosChecked + '\n';
-                msg += '🗑️ Фото удалено: ' + result.photosRemoved + '\n';
-                
-                if (result.errors.length > 0) {
-                    msg += '\n⚠️ Ошибок: ' + result.errors.length + '\n';
-                    msg += 'Примеры:\n';
-                    for (var k = 0; k < Math.min(result.errors.length, 3); k++) {
-                        msg += '- ' + result.errors[k].substring(0, 50) + '...\n';
-                    }
-                }
-                
-                alert(msg);
-                gallery.loadFolders();
-            } else {
-                alert('❌ Ошибка: ' + (result.error || 'Unknown error'));
-            }
-        })
-        .catch(function(error) {
-            alert('❌ Ошибка: ' + error.message);
-        });
-    },    
-    
+
+    // === УДАЛЕНО: syncStorage полностью ===
+
     initSortable: function() {
         var container = document.getElementById('folders-container');
         if (!container || !api.isAdmin()) return;
@@ -578,17 +527,7 @@ var admin = {
         });
     },
 
-    // === НОВОЕ: Загрузка фото с очередью ===
-    
     uploadPhoto: function() {
-        // Проверяем, не идёт ли уже загрузка в эту папку
-        if (this.isUploading && this.uploadQueue.length > 0) {
-            var currentFolderId = this.uploadQueue[0].folderId;
-            if (gallery.currentFolder && gallery.currentFolder.id !== currentFolderId) {
-                // Можно добавить в очередь другой папки
-            }
-        }
-        
         var input = document.getElementById('photo-upload');
         if (input) {
             input.value = '';
@@ -596,7 +535,6 @@ var admin = {
         }
     },
 
-    // Вызывается когда пользователь выбрал файлы
     handlePhotoSelection: function(input) {
         var files = Array.from(input.files);
         if (!files.length) return;
@@ -609,7 +547,6 @@ var admin = {
         var folderId = gallery.currentFolder.id;
         var folderName = gallery.currentFolder.title;
         
-        // Добавляем в очередь
         files.forEach(function(file) {
             admin.uploadQueue.push({
                 file: file,
@@ -622,13 +559,11 @@ var admin = {
         this.showQueueInterface();
         input.value = '';
         
-        // Автостарт если не загружаем
         if (!this.isUploading) {
             this.startUpload();
         }
     },
 
-    // Показываем интерфейс очереди
     showQueueInterface: function() {
         var existing = document.getElementById('upload-queue-panel');
         if (existing) {
@@ -719,7 +654,6 @@ var admin = {
             count.textContent = 'Успешно: ' + done + ' | Ошибок: ' + failed;
             controls.style.display = 'none';
             
-            // Автозакрытие через 3 секунды если нет ошибок
             if (failed === 0 && done > 0) {
                 setTimeout(function() {
                     var panel = document.getElementById('upload-queue-panel');
@@ -741,15 +675,12 @@ var admin = {
         this.updateQueueDisplay();
     },
 
-    // === ОСНОВНАЯ ЛОГИКА ЗАГРУЗКИ ===
-    
     startUpload: function() {
         if (this.isUploading || this.uploadQueue.length === 0) return;
         
         this.isUploading = true;
         this.uploadPaused = false;
         
-        // Считаем общее количество для прогресса
         if (this.uploadStats.total === 0) {
             this.uploadStats.total = this.uploadQueue.length;
         }
@@ -766,24 +697,19 @@ var admin = {
             return;
         }
         
-        // Берём следующий файл
         var item = this.uploadQueue[0];
         this.uploadStats.currentFile = item.file;
         this.updateQueueDisplay();
         
-        // Сбрасываем таймер бездействия (загрузка = активность)
         this.resetInactivityTimer();
         
-        // Загружаем с ретраями
         this.tryUploadFile(item, 1).then(function(success) {
-            // Удаляем из очереди в любом случае
             self.uploadQueue.shift();
             
             if (success) {
                 self.uploadStats.uploaded++;
             } else {
                 self.uploadStats.failed++;
-                // Останавливаемся при ошибке
                 self.uploadPaused = true;
                 self.showErrorDialog(item);
                 return;
@@ -791,10 +717,9 @@ var admin = {
             
             self.updateQueueDisplay();
             
-            // Пауза перед следующим файлом
-            var pauseTime = 3000; // 3 секунды базово
+            var pauseTime = 3000;
             if (self.uploadStats.uploaded % 5 === 0) {
-                pauseTime = 10000; // 10 секунд каждые 5 фото
+                pauseTime = 10000;
                 console.log('Пауза 10 секунд после 5 фото');
             }
             
@@ -807,14 +732,14 @@ var admin = {
     tryUploadFile: function(item, attempt) {
         var self = this;
         var maxAttempts = 3;
-        var timeoutMs = 30000; // 30 секунд таймаут
+        var timeoutMs = 30000;
         
         console.log('Загрузка:', item.file.name, 'попытка', attempt);
         
         return new Promise(function(resolve) {
             var timeoutId = setTimeout(function() {
                 console.error('Таймаут:', item.file.name);
-                resolve(false); // Таймаут = неуспех
+                resolve(false);
             }, timeoutMs);
             
             api.uploadPhoto(item.folderId, item.file).then(function(result) {
@@ -824,14 +749,7 @@ var admin = {
                     console.log('Успех:', item.file.name, 'ID:', result.id);
                     resolve(true);
                 } else {
-                    console.error('Нет ID:', item.file.name, result);
-                    if (attempt < maxAttempts) {
-                        setTimeout(function() {
-                            resolve(self.tryUploadFile(item, attempt + 1));
-                        }, 2000);
-                    } else {
-                        resolve(false);
-                    }
+                    throw new Error('Server returned no ID');
                 }
             }).catch(function(error) {
                 clearTimeout(timeoutId);
@@ -852,7 +770,6 @@ var admin = {
         var self = this;
         var fileName = failedItem.file.name;
         
-        // Создаём модальное окно
         var modal = document.createElement('div');
         modal.id = 'upload-error-modal';
         modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10003;display:flex;align-items:center;justify-content:center;';
@@ -871,10 +788,8 @@ var admin = {
         
         document.body.appendChild(modal);
         
-        // Обработчики
         document.getElementById('btn-retry').onclick = function() {
             document.body.removeChild(modal);
-            // Возвращаем в начало очереди
             self.uploadQueue.unshift(failedItem);
             self.uploadStats.failed--;
             self.uploadPaused = false;
@@ -883,14 +798,13 @@ var admin = {
         
         document.getElementById('btn-skip').onclick = function() {
             document.body.removeChild(modal);
-            // Пропускаем, файл уже удалён из очереди
             self.uploadPaused = false;
             self.processQueue();
         };
         
         document.getElementById('btn-stop').onclick = function() {
             document.body.removeChild(modal);
-            self.uploadQueue = []; // Очищаем всё
+            self.uploadQueue = [];
             self.finishUpload();
         };
     },
@@ -900,12 +814,10 @@ var admin = {
         this.uploadStats.currentFile = null;
         this.updateQueueDisplay();
         
-        // Обновляем текущую папку если она открыта
         if (gallery.currentFolder && this.uploadStats.uploaded > 0) {
             gallery.loadPhotos(gallery.currentFolder.id);
         }
         
-        // Сбрасываем статистику для следующей партии
         var self = this;
         setTimeout(function() {
             if (!self.isUploading && self.uploadQueue.length === 0) {
@@ -914,17 +826,13 @@ var admin = {
         }, 5000);
     },
 
-    // === МАССОВОЕ УДАЛЕНИЕ ФОТО ===
-    
     selectedPhotos: [],
 
-    // Вызывается из gallery.js когда рендерятся фото
     initPhotoSelection: function() {
         var self = this;
         var container = document.getElementById('photos-container');
         if (!container) return;
         
-        // Добавляем кнопку "Выбрать все" если её нет
         var toolbar = document.getElementById('photo-toolbar');
         if (!toolbar) {
             toolbar = document.createElement('div');
@@ -952,7 +860,6 @@ var admin = {
             toolbar.appendChild(deleteSelectedBtn);
             toolbar.appendChild(cancelBtn);
             
-            // Вставляем перед сеткой фото
             var grid = document.getElementById('photos-grid');
             if (grid && grid.parentNode) {
                 grid.parentNode.insertBefore(toolbar, grid);
@@ -967,7 +874,6 @@ var admin = {
         var toolbar = document.getElementById('photo-toolbar');
         if (toolbar) toolbar.style.display = 'block';
         
-        // Добавляем чекбоксы к фото
         var photos = document.querySelectorAll('.photo-item');
         photos.forEach(function(photo) {
             var checkbox = document.createElement('div');
@@ -992,7 +898,6 @@ var admin = {
         var toolbar = document.getElementById('photo-toolbar');
         if (toolbar) toolbar.style.display = 'none';
         
-        // Убираем чекбоксы
         var checkboxes = document.querySelectorAll('.photo-checkbox');
         checkboxes.forEach(function(cb) { cb.remove(); });
     },
@@ -1002,11 +907,9 @@ var admin = {
         var checkboxes = document.querySelectorAll('.photo-checkbox');
         var btn = document.getElementById('btn-select-all');
         
-        // Проверяем, все ли выбраны
         var allSelected = this.selectedPhotos.length === allPhotos.length && allPhotos.length > 0;
         
         if (allSelected) {
-            // Снимаем все
             this.selectedPhotos = [];
             checkboxes.forEach(function(cb) {
                 cb.innerHTML = '';
@@ -1014,7 +917,6 @@ var admin = {
             });
             btn.textContent = '☐ Выбрать все';
         } else {
-            // Выбираем все
             this.selectedPhotos = [];
             allPhotos.forEach(function(photo, index) {
                 var photoId = photo.getAttribute('data-id');
@@ -1037,19 +939,16 @@ var admin = {
         var index = this.selectedPhotos.indexOf(photoId);
         
         if (index > -1) {
-            // Убираем из выбора
             this.selectedPhotos.splice(index, 1);
             checkbox.innerHTML = '';
             checkbox.style.background = '#fff';
         } else {
-            // Добавляем в выбор
             this.selectedPhotos.push(photoId);
             checkbox.innerHTML = '✓';
             checkbox.style.background = '#27ae60';
             checkbox.style.color = '#fff';
         }
         
-        // Обновляем кнопку "Выбрать все"
         var allPhotos = document.querySelectorAll('.photo-item');
         var btn = document.getElementById('btn-select-all');
         if (this.selectedPhotos.length === allPhotos.length) {
@@ -1079,7 +978,6 @@ var admin = {
         var deleted = 0;
         var errors = 0;
         
-        // Удаляем последовательно
         function deleteNext() {
             if (self.selectedPhotos.length === 0) {
                 alert('Удалено: ' + deleted + '\nОшибок: ' + errors);
@@ -1183,8 +1081,6 @@ var admin = {
     }
 };
 
-// === ИНИЦИАЛИЗАЦИЯ ===
-
 document.addEventListener('DOMContentLoaded', function() {
     if (api.isAdmin()) {
         admin.showAdminUI();
@@ -1198,7 +1094,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Сброс таймера при любой активности
     ['click', 'touchstart', 'keydown', 'scroll'].forEach(function(event) {
         document.addEventListener(event, function() {
             if (admin.isAdminActive) {
@@ -1207,7 +1102,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Предупреждение при закрытии страницы во время загрузки
     window.addEventListener('beforeunload', function(e) {
         if (admin.isUploading && admin.uploadQueue.length > 0) {
             e.preventDefault();
