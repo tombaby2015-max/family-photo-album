@@ -717,10 +717,9 @@ var admin = {
             
             self.updateQueueDisplay();
             
-            var pauseTime = 3000;
-            if (self.uploadStats.uploaded % 5 === 0) {
-                pauseTime = 10000;
-                console.log('Пауза 10 секунд после 5 фото');
+            var pauseTime = 5000; // 5 секунд между фото
+            if (self.uploadStats.uploaded % 3 === 0) { // каждые 3 фото
+            pauseTime = 15000; // 15 секунд пауза
             }
             
             setTimeout(function() {
@@ -732,7 +731,7 @@ var admin = {
     tryUploadFile: function(item, attempt) {
         var self = this;
         var maxAttempts = 3;
-        var timeoutMs = 30000;
+        var timeoutMs = 45000;
         
         console.log('Загрузка:', item.file.name, 'попытка', attempt);
         
