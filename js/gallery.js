@@ -1,3 +1,6 @@
+// gallery.js — показывает папки и фото (новая версия)
+// Работает с Telegram ID и новой структурой KV
+
 var gallery = {
     folders: [],
     currentPhotos: [],
@@ -8,103 +11,62 @@ var gallery = {
     previewState: { x: 50, y: 50, scale: 100 },
     keyHandler: null,
     lastOpenedFolderId: null,
-    
-    foldersOffset: 0,
-    foldersHasMore: false,
-    photosOffset: 0,
-    photosHasMore: false,
-    isLoadingMore: false,
 
     init: function() {
         var self = this;
         var hash = window.location.hash;
         if (hash && hash.indexOf('folder=') !== -1) {
             var folderId = hash.split('folder=')[1];
-            api.getFolders(0).then(function(response) {
-                self.folders = response.folders || [];
-                self.foldersHasMore = response.hasMore || false;
-                self.foldersOffset = self.folders.length;
-                
-                var folder = null;
-                for (var i = 0; i < self.folders.length; i++) {
-                    if (self.folders[i].id === folderId) {
-                        folder = self.folders[i];
-                        break;
-                    }
-                }
-                
-                if (folder) {
-                    self.openFolder(folder, false);
-                } else if (self.foldersHasMore) {
-                    self.loadMoreFoldersAndFind(folderId);
-                } else {
-                    self.showMainPage();
-                }
-            });
+            self.loadFoldersAndOpen(folderId);
         } else {
             this.loadFolders();
         }
     },
 
-    loadMoreFoldersAndFind: function(folderId) {
+    // Загружаем папки и пытаемся открыть нужную
+    loadFoldersAndOpen: function(folderId) {
         var self = this;
-        if (!this.foldersHasMore) {
-            self.showMainPage();
-            return;
-        }
-        
-        api.getFolders(this.foldersOffset).then(function(response) {
-            var newFolders = response.folders || [];
-            self.foldersHasMore = response.hasMore || false;
-            self.foldersOffset += newFolders.length;
-            self.folders = self.folders.concat(newFolders);
+        api.getFolders().then(function(folders) {
+            self.folders = folders;
+            self.renderFolders();
             
+            // Ищем папку с нужным ID
             var folder = null;
-            for (var i = 0; i < newFolders.length; i++) {
-                if (newFolders[i].id === folderId) {
-                    folder = newFolders[i];
+            for (var i = 0; i < folders.length; i++) {
+                if (folders[i].id === folderId) {
+                    folder = folders[i];
                     break;
                 }
             }
             
             if (folder) {
                 self.openFolder(folder, false);
-            } else if (self.foldersHasMore) {
-                self.loadMoreFoldersAndFind(folderId);
             } else {
                 self.showMainPage();
             }
         });
     },
 
+    // Загружаем все папки
     loadFolders: function() {
         var self = this;
-        this.foldersOffset = 0;
-        this.folders = [];
-        this.foldersHasMore = false;
-        
         var container = document.getElementById('folders-container');
         if (container) container.innerHTML = '<li class="loading">Загрузка папок...</li>';
         
-        api.getFolders(0).then(function(response) {
-            self.folders = response.folders || [];
-            self.foldersHasMore = response.hasMore || false;
-            self.foldersOffset = self.folders.length;
-            
+        api.getFolders().then(function(folders) {
+            self.folders = folders;
             self.renderFolders();
         });
     },
 
+    // Показываем папки на странице
     renderFolders: function() {
         var self = this;
         var container = document.getElementById('folders-container');
         if (!container) return;
         
-        var oldLoadMore = document.getElementById('load-more-folders-container');
-        if (oldLoadMore) oldLoadMore.remove();
-        
         if (self.folders.length === 0) {
-            container.innerHTML = '<li class="empty-state"><h4>Папок пока нет</h4></li>';
+            container.innerHTML = '<li class="empty-state"><h4>Папок пока нет</h4><p>Создайте тему в Telegram</p></li>';
             return;
         }
         
@@ -115,6 +77,7 @@ var gallery = {
         
         container.innerHTML = html;
         
+        // Добавляем обработчики кликов
         for (var j = 0; j < self.folders.length; j++) {
             (function(folder) {
                 var card = document.getElementById('folder-' + folder.id);
@@ -129,58 +92,17 @@ var gallery = {
             })(self.folders[j]);
         }
         
-        if (self.lastOpenedFolderId) {
+        // Подключаем сортировку drag&drop для админа
+        if (api.isAdmin() && typeof Sortable !== 'undefined') {
             setTimeout(function() {
-                var folderElement = document.getElementById('folder-' + self.lastOpenedFolderId);
-                if (folderElement) {
-                    folderElement.scrollIntoView({ behavior: 'instant', block: 'center' });
+                if (typeof admin !== 'undefined') {
+                    admin.initSortable();
                 }
-                self.lastOpenedFolderId = null;
-            }, 50);
-        }
-        
-        if (self.foldersHasMore) {
-            var loadMoreContainer = document.createElement('div');
-            loadMoreContainer.id = 'load-more-folders-container';
-            loadMoreContainer.style.cssText = 'width:100%;text-align:center;padding:30px 0;';
-            loadMoreContainer.innerHTML = '<div id="load-more-folders" style="display:inline-block;padding:15px 30px;background:rgba(0,0,0,0.05);border-radius:8px;cursor:pointer;color:#666;font-size:16px;transition:background 0.3s;" onmouseover="this.style.background=\'rgba(0,0,0,0.1)\'" onmouseout="this.style.background=\'rgba(0,0,0,0.05)\'">+ Загрузить ещё папки</div>';
-            
-            container.parentNode.insertBefore(loadMoreContainer, container.nextSibling);
-            
-            document.getElementById('load-more-folders').onclick = function() {
-                self.loadMoreFolders();
-            };
-        }
-        
-        if (!self.foldersHasMore && api.isAdmin()) {
-            if (typeof admin !== 'undefined') {
-                admin.initSortable();
-            }
+            }, 100);
         }
     },
 
-    loadMoreFolders: function() {
-        var self = this;
-        if (this.isLoadingMore || !this.foldersHasMore) return;
-        
-        this.isLoadingMore = true;
-        var btn = document.getElementById('load-more-folders');
-        if (btn) btn.textContent = 'Загружается...';
-        
-        api.getFolders(this.foldersOffset).then(function(response) {
-            var newFolders = response.folders || [];
-            self.foldersHasMore = response.hasMore || false;
-            self.foldersOffset += newFolders.length;
-            self.folders = self.folders.concat(newFolders);
-            
-            self.isLoadingMore = false;
-            self.renderFolders();
-        }).catch(function() {
-            self.isLoadingMore = false;
-            if (btn) btn.textContent = '+ Загрузить ещё папки';
-        });
-    },
-
+    // Создаём HTML для карточки папки
     createFolderCard: function(folder) {
         var isAdmin = api.isAdmin();
         var isEditing = this.editingFolder === folder.id;
@@ -188,6 +110,7 @@ var gallery = {
         
         var bgStyle = this.getFolderBackgroundStyle(folder);
         
+        // Кнопки админа (только для админов)
         var adminActions = '';
         if (isAdmin && !isEditing) {
             adminActions = '<div class="folder-card__admin-actions">' +
@@ -198,6 +121,7 @@ var gallery = {
             '</div>';
         }
         
+        // Редактор положения обложки
         var previewEditor = '';
         if (isEditing) {
             previewEditor = '<div class="preview-editor">' +
@@ -211,17 +135,16 @@ var gallery = {
             '</div>';
         }
         
-        var photoCountText = folder.photoCount ? ' (' + folder.photoCount + ' фото)' : '';
-        
         return '<li id="folder-' + folder.id + '" class="t214__col t-item t-card__col t-col t-col_4 folder-card ' + hiddenClass + (isEditing ? ' editing' : '') + '" data-folder-id="' + folder.id + '">' +
             '<div class="folder-card__image" id="folder-image-' + folder.id + '" style="' + bgStyle + '">' +
-                '<div class="folder-card__title">' + folder.title + photoCountText + '</div>' +
+                '<div class="folder-card__title">' + folder.title + '</div>' +
                 adminActions +
                 previewEditor +
             '</div>' +
         '</li>';
     },
 
+    // Стиль фона папки (обложка)
     getFolderBackgroundStyle: function(folder) {
         var imageUrl = folder.cover_url || 'https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg';
         
@@ -239,6 +162,7 @@ var gallery = {
         return 'background-image: url(\'' + imageUrl + '\'); background-position: ' + x + '% ' + y + '%; background-size: ' + scale + '%;';
     },
 
+    // Редактирование превью папки
     startEditPreview: function(folderId) {
         var folder = null;
         for (var i = 0; i < this.folders.length; i++) {
@@ -311,6 +235,7 @@ var gallery = {
         });
     },
 
+    // Открываем папку (показываем фото)
     openFolder: function(folder, updateHash) {
         this.lastOpenedFolderId = folder.id;
         
@@ -319,34 +244,20 @@ var gallery = {
         }
         this.currentFolder = folder;
         this.currentPhotos = [];
-        this.photosOffset = 0;
-        this.photosHasMore = false;
+        this.visiblePhotos = [];
         
+        // Прячем главную страницу, показываем страницу папки
         var coverSection = document.getElementById('rec-cover');
         var mainPage = document.getElementById('main-page');
         var mainFooter = document.getElementById('main-footer');
         var folderPage = document.getElementById('folder-page');
         var sidebarButtons = document.getElementById('sidebar-admin-buttons');
-        var coverImage = document.getElementById('folder-cover-image');
         var titleText = document.getElementById('folder-title-text');
         
-        if (coverSection) {
-            coverSection.style.display = 'none';
-            var carrier = coverSection.querySelector('.t-cover__carrier');
-            var filter = coverSection.querySelector('.t-cover__filter');
-            var wrapper = coverSection.querySelector('.t-cover__wrapper');
-            if (carrier) carrier.style.display = 'none';
-            if (filter) filter.style.display = 'none';
-            if (wrapper) wrapper.style.display = 'none';
-        }
-        
+        if (coverSection) coverSection.style.display = 'none';
         if (mainPage) mainPage.style.display = 'none';
         if (mainFooter) mainFooter.style.display = 'none';
         if (folderPage) folderPage.style.display = 'block';
-        
-        if (coverImage) {
-            coverImage.style.backgroundImage = "url('https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg')";
-        }
         
         if (titleText) titleText.textContent = folder.title;
         
@@ -358,6 +269,7 @@ var gallery = {
         window.scrollTo(0, 0);
     },
 
+    // Возвращаемся на главную страницу
     showMainPage: function() {
         this.editingFolder = null;
         
@@ -374,103 +286,58 @@ var gallery = {
         var folderPage = document.getElementById('folder-page');
         
         if (folderPage) folderPage.style.display = 'none';
-        
-        if (coverSection) {
-            coverSection.style.display = 'block';
-            var carrier = coverSection.querySelector('.t-cover__carrier');
-            var filter = coverSection.querySelector('.t-cover__filter');
-            var wrapper = coverSection.querySelector('.t-cover__wrapper');
-            if (carrier) carrier.style.display = '';
-            if (filter) filter.style.display = '';
-            if (wrapper) wrapper.style.display = '';
-        }
-        
+        if (coverSection) coverSection.style.display = 'block';
         if (mainPage) mainPage.style.display = 'block';
         if (mainFooter) mainFooter.style.display = 'block';
         
         this.currentFolder = null;
         this.currentPhotos = [];
         this.visiblePhotos = [];
-        this.photosOffset = 0;
-        this.photosHasMore = false;
         
         this.loadFolders();
     },
 
-    // === ИСПРАВЛЕННАЯ loadPhotos ===
-    loadPhotos: function(folderId, offset) {
-        offset = offset || 0;
+    // Загружаем фото в папке (двухэтапно: сначала список, потом ссылки)
+    loadPhotos: function(folderId) {
         var self = this;
-        var result; // ← ИСПРАВЛЕНО: объявляем здесь
-        
         var container = document.getElementById('photos-container');
-        if (offset === 0 && container) {
-            container.innerHTML = '<p>Загрузка...</p>';
-        }
+        if (container) container.innerHTML = '<p>Загрузка...</p>';
         
-        api.getPhotosList(folderId, offset).then(function(response) {
-            result = response; // ← ИСПРАВЛЕНО: сохраняем ответ
-            
-            if (!result.photos || result.photos.length === 0) {
-                if (offset === 0) {
-                    container.innerHTML = '<p>Фотографий пока нет</p>';
-                }
+        // Этап 1: Получаем список фото (ID и file_id)
+        api.getPhotosList(folderId).then(function(photos) {
+            if (!photos || photos.length === 0) {
+                if (container) container.innerHTML = '<p>В этой папке пока нет фото</p>';
                 return;
             }
             
-            self.currentPhotos = offset === 0 ? result.photos : self.currentPhotos.concat(result.photos);
-            self.photosHasMore = result.hasMore;
+            self.currentPhotos = photos;
             
-            var photoIds = result.photos.map(function(p) { return p.id; });
-            
-            return api.getPhotosUrls(photoIds);
+            // Этап 2: Получаем ссылки от Telegram
+            return api.getPhotosUrls(folderId, photos);
         }).then(function(urls) {
             if (!urls) return;
             
-            self.currentPhotos.forEach(function(photo) {
+            // Добавляем URL к фото
+            for (var i = 0; i < self.currentPhotos.length; i++) {
+                var photo = self.currentPhotos[i];
                 if (urls[photo.id]) {
                     photo.url = urls[photo.id];
                 }
-            });
-            
-            self.renderPhotos(offset > 0);
-            
-            if (self.photosHasMore) {
-                self.photosOffset = offset + result.photos.length; // ← ИСПРАВЛЕНО
-                self.showLoadMoreButton(folderId, self.photosOffset);
             }
+            
+            self.visiblePhotos = self.currentPhotos;
+            self.renderPhotos();
         }).catch(function(error) {
             console.error('Ошибка загрузки фото:', error);
-            if (offset === 0 && container) {
-                container.innerHTML = '<p>Ошибка загрузки</p>';
-            }
+            if (container) container.innerHTML = '<p>Ошибка загрузки</p>';
         });
     },
 
-    // === ИСПРАВЛЕННАЯ renderPhotos ===
-    renderPhotos: function(append) { // ← ИСПРАВЛЕНО: принимаем параметр
+    // Показываем фото на странице
+    renderPhotos: function() {
         var self = this;
         var grid = document.getElementById('photos-container');
         if (!grid) return;
-        
-        // ← ИСПРАВЛЕНО: обновляем visiblePhotos
-        if (!append) {
-            self.visiblePhotos = self.currentPhotos.slice();
-        } else {
-            // При добавлении проверяем, каких фото ещё нет в visiblePhotos
-            var existingIds = {};
-            for (var i = 0; i < self.visiblePhotos.length; i++) {
-                existingIds[self.visiblePhotos[i].id] = true;
-            }
-            for (var j = 0; j < self.currentPhotos.length; j++) {
-                if (!existingIds[self.currentPhotos[j].id]) {
-                    self.visiblePhotos.push(self.currentPhotos[j]);
-                }
-            }
-        }
-        
-        var oldLoadMore = document.getElementById('load-more-photos-container');
-        if (oldLoadMore) oldLoadMore.remove();
         
         if (self.visiblePhotos.length === 0) {
             grid.innerHTML = '<div class="empty-state"><h4>В этой папке пока нет фото</h4></div>';
@@ -482,36 +349,9 @@ var gallery = {
             html += self.createPhotoItem(self.visiblePhotos[i], i);
         }
         grid.innerHTML = html;
-        
-        if (self.photosHasMore) {
-            var loadMoreContainer = document.createElement('div');
-            loadMoreContainer.id = 'load-more-photos-container';
-            loadMoreContainer.style.cssText = 'grid-column:1/-1;text-align:center;padding:20px 0;';
-            loadMoreContainer.innerHTML = '<div id="load-more-photos" style="display:inline-block;padding:15px 30px;background:rgba(0,0,0,0.05);border-radius:8px;cursor:pointer;color:#666;font-size:16px;transition:background 0.3s;" onmouseover="this.style.background=\'rgba(0,0,0,0.1)\'" onmouseout="this.style.background=\'rgba(0,0,0,0.05)\'">+ Загрузить ещё фотографии</div>';
-            
-            grid.appendChild(loadMoreContainer);
-            
-            document.getElementById('load-more-photos').onclick = function() {
-                self.loadMorePhotos();
-            };
-        }
     },
 
-    loadMorePhotos: function() {
-        var self = this;
-        if (this.isLoadingMore || !this.photosHasMore || !this.currentFolder) return;
-        
-        this.isLoadingMore = true;
-        var btn = document.getElementById('load-more-photos');
-        if (btn) btn.textContent = 'Загружается...';
-        
-        this.loadPhotos(this.currentFolder.id, this.photosOffset);
-    },
-
-    showLoadMoreButton: function(folderId, offset) {
-        // Эта функция больше не нужна, логика в renderPhotos
-    },
-
+    // Создаём HTML для одного фото
     createPhotoItem: function(photo, index) {
         var isAdmin = api.isAdmin();
         var hiddenClass = photo.hidden ? 'hidden-photo' : '';
@@ -524,12 +364,16 @@ var gallery = {
             '</div>';
         }
         
+        // Если URL нет (фото удалено в Telegram), показываем заглушку
+        var imgSrc = photo.url || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ccc"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%23999"%3EНет фото%3C/text%3E%3C/svg%3E';
+        
         return '<div class="photo-item ' + hiddenClass + '" onclick="gallery.openFullscreen(' + index + ')">' +
-            '<img src="' + photo.url + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">' +
+            '<img src="' + imgSrc + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">' +
             adminActions +
         '</div>';
     },
 
+    // Открываем фото на весь экран
     openFullscreen: function(index) {
         if (index < 0 || index >= this.visiblePhotos.length) return;
         
@@ -546,12 +390,12 @@ var gallery = {
         if (btnCover) btnCover.style.display = api.isAdmin() ? 'inline-block' : 'none';
         if (btnDelete) btnDelete.style.display = api.isAdmin() ? 'inline-block' : 'none';
         
-        if (img) img.src = photo.url;
-        if (link) link.href = photo.url;
+        if (img) img.src = photo.url || '';
+        if (link) link.href = photo.url || '#';
         if (viewer) viewer.style.display = 'flex';
         
+        // Клавиатурная навигация
         var self = this;
-        
         if (this.keyHandler) {
             document.removeEventListener('keydown', this.keyHandler);
         }
@@ -567,47 +411,33 @@ var gallery = {
         };
         document.addEventListener('keydown', this.keyHandler);
         
+        // Свайпы для мобильных
+        this.initSwipe();
+    },
+
+    initSwipe: function() {
+        var self = this;
+        var viewerEl = document.getElementById('fullscreen-viewer');
+        if (!viewerEl) return;
+        
+        var imageContainer = viewerEl.querySelector('.fullscreen-viewer__image-container');
+        if (!imageContainer) return;
+        
         var touchStartX = 0;
         var touchEndX = 0;
-        var isSwiping = false;
         
-        var viewerEl = document.getElementById('fullscreen-viewer');
-        var imageContainer = viewerEl.querySelector('.fullscreen-viewer__image-container');
-        
-        if (imageContainer._touchStartHandler) {
-            imageContainer.removeEventListener('touchstart', imageContainer._touchStartHandler);
-        }
-        if (imageContainer._touchEndHandler) {
-            imageContainer.removeEventListener('touchend', imageContainer._touchEndHandler);
-        }
-        
-        imageContainer._touchStartHandler = function(e) {
+        imageContainer.ontouchstart = function(e) {
             touchStartX = e.changedTouches[0].screenX;
-            isSwiping = true;
         };
         
-        imageContainer._touchEndHandler = function(e) {
-            if (!isSwiping) return;
+        imageContainer.ontouchend = function(e) {
             touchEndX = e.changedTouches[0].screenX;
-            isSwiping = false;
-            handleSwipe();
-        };
-        
-        function handleSwipe() {
-            var swipeThreshold = 50;
             var diff = touchStartX - touchEndX;
-            
-            if (Math.abs(diff) > swipeThreshold) {
-                if (diff > 0) {
-                    self.nextPhoto();
-                } else {
-                    self.prevPhoto();
-                }
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) self.nextPhoto();
+                else self.prevPhoto();
             }
-        }
-        
-        imageContainer.addEventListener('touchstart', imageContainer._touchStartHandler, {passive: true});
-        imageContainer.addEventListener('touchend', imageContainer._touchEndHandler, {passive: true});
+        };
     },
 
     closeFullscreen: function() {
@@ -632,14 +462,16 @@ var gallery = {
     },
     
     allFoldersLoaded: function() {
-        return !this.foldersHasMore;
+        return true; // Теперь всегда true, нет пагинации папок
     }
 };
 
+// Запускаем при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     gallery.init();
 });
 
+// Прокрутка к папкам
 function scrollToFolders() {
     var mainPage = document.getElementById('main-page');
     if (mainPage) {
