@@ -144,23 +144,63 @@ var gallery = {
         '</li>';
     },
 
-    // Стиль фона папки (обложка)
-    getFolderBackgroundStyle: function(folder) {
-        var imageUrl = folder.cover_url || 'https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg';
-        
-        if (this.editingFolder === folder.id) {
-            var x = this.previewState.x;
-            var y = this.previewState.y;
-            var scale = this.previewState.scale;
-            return 'background-image: url(\'' + imageUrl + '\'); background-position: ' + x + '% ' + y + '%; background-size: ' + scale + '%;';
-        }
-        
-        var x = folder.cover_x !== undefined ? folder.cover_x : 50;
-        var y = folder.cover_y !== undefined ? folder.cover_y : 50;
-        var scale = folder.cover_scale !== undefined ? folder.cover_scale : 100;
-        
+   // В gallery.js замените функцию getFolderBackgroundStyle
+
+getFolderBackgroundStyle: function(folder) {
+    // Если есть cover_url (это file_id), нужно получить URL
+    // Пока используем заглушку, URL получим отдельно
+    var imageUrl = 'https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg';
+    
+    // Если у папки есть обложка, попробуем использовать кэш или получить URL
+    if (folder.cover_url && folder.cover_url.startsWith('http')) {
+        // Это уже URL (старая система)
+        imageUrl = folder.cover_url;
+    } else if (folder.cover_url) {
+        // Это file_id, нужно получить URL
+        // Пока показываем заглушку, в фоне получим URL
+        this.loadCoverUrl(folder.id, folder.cover_url);
+    }
+    
+    if (this.editingFolder === folder.id) {
+        var x = this.previewState.x;
+        var y = this.previewState.y;
+        var scale = this.previewState.scale;
         return 'background-image: url(\'' + imageUrl + '\'); background-position: ' + x + '% ' + y + '%; background-size: ' + scale + '%;';
-    },
+    }
+    
+    var x = folder.cover_x !== undefined ? folder.cover_x : 50;
+    var y = folder.cover_y !== undefined ? folder.cover_y : 50;
+    var scale = folder.cover_scale !== undefined ? folder.cover_scale : 100;
+    
+    return 'background-image: url(\'' + imageUrl + '\'); background-position: ' + x + '% ' + y + '%; background-size: ' + scale + '%;';
+},
+
+// Добавьте новую функцию для загрузки URL обложки
+loadCoverUrl: function(folderId, fileId) {
+    var self = this;
+    // Запрашиваем URL у бэкенда
+    fetch(API_BASE + '/photos/urls', {
+        method: 'POST',
+        headers: api.getHeaders(api.isAdmin()),
+        body: JSON.stringify({ 
+            folder_id: 'covers', // специальный маркер
+            photos: [{ id: 'cover', file_id: fileId }]
+        })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.urls && data.urls.cover) {
+            // Обновляем обложку в DOM
+            var imgEl = document.getElementById('folder-image-' + folderId);
+            if (imgEl) {
+                imgEl.style.backgroundImage = 'url(\'' + data.urls.cover + '\')';
+            }
+        }
+    })
+    .catch(function(e) {
+        console.error('Ошибка загрузки обложки:', e);
+    });
+},
 
     // Редактирование превью папки
     startEditPreview: function(folderId) {
