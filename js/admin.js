@@ -483,32 +483,35 @@ var admin = {
 
     // === ОБЛОЖКИ ПАПОК ===
 
-    setFolderCover: function() {
-        var img = document.getElementById('fullscreen-image');
-        if (!img || !img.src || !gallery.currentFolder) return;
-        
-        var photoUrl = img.src;
-        var folderId = gallery.currentFolder.id;
-        
-        // Находим текущее фото в списке
-        var currentPhoto = gallery.visiblePhotos[gallery.currentPhotoIndex];
-        if (!currentPhoto) return;
-        
-        var self = this;
-        // Сохраняем file_id как обложку
-        api.updateFolder(folderId, { cover_url: currentPhoto.file_id }).then(function(result) {
-            if (result) {
-                gallery.currentFolder.cover_url = currentPhoto.file_id;
-                gallery.closeFullscreen();
-                gallery.loadFolders();
-                self.createBackup('Установка превью папки');
-            } else {
-                console.error('Ошибка обновления превью');
-            }
-        }).catch(function(e) {
-            console.error('Ошибка обновления превью');
-        });
-    },
+setFolderCover: function() {
+    var img = document.getElementById('fullscreen-image');
+    if (!img || !img.src || !gallery.currentFolder) return;
+    
+    var folderId = gallery.currentFolder.id;
+    
+    // Находим текущее фото в списке
+    var currentPhoto = gallery.visiblePhotos[gallery.currentPhotoIndex];
+    if (!currentPhoto || !currentPhoto.file_id) {
+        alert('Ошибка: не найдено фото');
+        return;
+    }
+    
+    var self = this;
+    // Сохраняем file_id как обложку (не URL!)
+    api.updateFolder(folderId, { cover_url: currentPhoto.file_id }).then(function(result) {
+        if (result) {
+            gallery.currentFolder.cover_url = currentPhoto.file_id;
+            gallery.closeFullscreen();
+            gallery.loadFolders();
+            self.createBackup('Установка превью папки');
+        } else {
+            alert('Ошибка установки обложки');
+        }
+    }).catch(function(e) {
+        console.error('Ошибка:', e);
+        alert('Ошибка установки обложки');
+    });
+},
 
     // === ОЧИСТКА ХРАНИЛИЩА (опасно!) ===
 
