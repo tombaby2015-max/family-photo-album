@@ -75,7 +75,6 @@
                 <div class="t-col t-col_12">
                     <div class="admin-panel__title">Панель администратора</div>
                     <div class="admin-panel__buttons">
-                        <button class="admin-btn" onclick="admin.createFolder()">+ Создать папку</button>
                         <button class="admin-btn" onclick="admin.manualBackup()">💾 Сделать бэкап</button>
                         <button class="admin-btn" onclick="admin.restoreBackup()">📁 Восстановить из бэкапа</button>
                         <button class="admin-btn" onclick="admin.viewStorage()">👁️ Посмотреть хранилище</button>
@@ -129,14 +128,16 @@
                 </a>
                 
                 <div class="sidebar-admin-buttons" id="sidebar-admin-buttons" style="display:none;">
-                    <!-- ИСПРАВЛЕНО: onchange вызывает handlePhotoSelection -->
-                    <button class="admin-btn" onclick="admin.uploadPhoto()">+ Загрузить фото</button>
-                    <input type="file" id="photo-upload" multiple accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;" onchange="admin.handlePhotoSelection(this)">
-                    <button class="admin-btn" onclick="admin.renameFolder()">Переименовать</button>
-                    <button class="admin-btn danger" onclick="admin.deleteFolder()">Удалить папку</button>
-                    <!-- Кнопка выбора фото для удаления -->
-                    <button class="admin-btn" onclick="admin.enterSelectionMode()">Выбрать фото</button>
-                </div>
+    <!-- ИНСТРУКЦИЯ: фото загружаются через Telegram -->
+    <div style="background:#e8f4f8;padding:10px;border-radius:5px;margin-bottom:10px;font-size:12px;color:#333;">
+        <strong>📱 Загрузка фото:</strong><br>
+        Загружайте фото напрямую в эту тему в Telegram
+    </div>
+    
+    <button class="admin-btn" onclick="admin.renameFolder()">✏️ Переименовать</button>
+    <button class="admin-btn danger" onclick="admin.deleteFolder()">🗑️ Скрыть папку</button>
+    <button class="admin-btn" onclick="admin.enterSelectionMode()">☐ Выбрать фото</button>
+</div>
             </div>
             
             <!-- ИСПРАВЛЕНО: добавлен toolbar для массового удаления -->
