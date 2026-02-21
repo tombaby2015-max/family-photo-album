@@ -310,68 +310,144 @@ loadCoverUrl: function(folderId, fileId) {
     },
 
     // Возвращаемся на главную страницу
-    showMainPage: function() {
-        this.editingFolder = null;
+showMainPage: function() {
+    this.editingFolder = null;
+    
+    if (this.keyHandler) {
+        document.removeEventListener('keydown', this.keyHandler);
+        this.keyHandler = null;
+    }
+    
+    // Сохраняем ID последней открытой папки
+    var lastFolderId = this.lastOpenedFolderId;
+    
+    window.location.hash = '';
+    
+    var coverSection = document.getElementById('rec-cover');
+    var mainPage = document.getElementById('main-page');
+    var mainFooter = document.getElementById('main-footer');
+    var folderPage = document.getElementById('folder-page');
+    
+    if (folderPage) folderPage.style.display = 'none';
+    if (coverSection) coverSection.style.display = 'block';
+    if (mainPage) mainPage.style.display = 'block';
+    if (mainFooter) mainFooter.style.display = 'block';
+    
+    this.currentFolder = null;
+    this.currentPhotos = [];
+    this.visiblePhotos = [];
+    
+    // Загружаем папки и прокручиваем к последней
+    this.loadFoldersAndScroll(lastFolderId);
+},
+
+// Новая функция для прокрутки
+loadFoldersAndScroll: function(targetFolderId) {
+    var self = this;
+    api.getFolders().then(function(folders) {
+        self.folders = folders;
+        self.renderFolders();
         
-        if (this.keyHandler) {
-            document.removeEventListener('keydown', this.keyHandler);
-            this.keyHandler = null;
+        // Прокручиваем к нужной папке
+        if (targetFolderId) {
+            setTimeout(function() {
+                var folderEl = document.getElementById('folder-' + targetFolderId);
+                if (folderEl) {
+                    folderEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Подсвечиваем briefly
+                    folderEl.style.boxShadow = '0 0 20px #3498db';
+                    setTimeout(function() {
+                        folderEl.style.boxShadow = '';
+                    }, 2000);
+                }
+            }, 100);
         }
-        
-        window.location.hash = '';
-        
-        var coverSection = document.getElementById('rec-cover');
-        var mainPage = document.getElementById('main-page');
-        var mainFooter = document.getElementById('main-footer');
-        var folderPage = document.getElementById('folder-page');
-        
-        if (folderPage) folderPage.style.display = 'none';
-        if (coverSection) coverSection.style.display = 'block';
-        if (mainPage) mainPage.style.display = 'block';
-        if (mainFooter) mainFooter.style.display = 'block';
-        
-        this.currentFolder = null;
-        this.currentPhotos = [];
-        this.visiblePhotos = [];
-        
-        this.loadFolders();
-    },
+    });
+},
 
     // Загружаем фото в папке (двухэтапно: сначала список, потом ссылки)
-    loadPhotos: function(folderId) {
-        var self = this;
-        var container = document.getElementById('photos-container');
+loadPhotos: function(folderId, offset) {
+    offset = offset || 0;
+    var self = this;
+    var container = document.getElementById('photos-container');
+    
+    if (offset === 0) {
+        this.currentPhotos = [];
+        this.visiblePhotos = [];
         if (container) container.innerHTML = '<p>Загрузка...</p>';
-        
-        // Этап 1: Получаем список фото (ID и file_id)
-        api.getPhotosList(folderId).then(function(photos) {
-            if (!photos || photos.length === 0) {
-                if (container) container.innerHTML = '<p>В этой папке пока нет фото</p>';
-                return;
+    }
+    
+    // Загружаем ВСЕ фото сразу (но будем показывать частями)
+    api.getPhotosList(folderId).then(function(photos) {
+        if (!photos || photos.length === 0) {
+            if (offset === 0 && container) {
+                container.innerHTML = '<p>В этой папке пока нет фото</p>';
             }
-            
-            self.currentPhotos = photos;
-            
-            // Этап 2: Получаем ссылки от Telegram
-            return api.getPhotosUrls(folderId, photos);
-        }).then(function(urls) {
-            if (!urls) return;
-            
+            return;
+        }
+        
+        // Если фото много, загружаем URL порциями по 40
+        var BATCH_SIZE = 40;
+        var allPhotos = photos;
+        
+        // Сортируем по message_id
+        allPhotos.sort(function(a, b) { return parseInt(a.id) - parseInt(b.id); });
+        
+        // Берём первую партию для отображения
+        var photosToLoad = allPhotos.slice(offset, offset + BATCH_SIZE);
+        
+        if (photosToLoad.length === 0) {
+            return; // Все загружены
+        }
+        
+        // Получаем URL для этой партии
+        return api.getPhotosUrls(folderId, photosToLoad).then(function(urls) {
             // Добавляем URL к фото
-            for (var i = 0; i < self.currentPhotos.length; i++) {
-                var photo = self.currentPhotos[i];
+            for (var i = 0; i < photosToLoad.length; i++) {
+                var photo = photosToLoad[i];
                 if (urls[photo.id]) {
                     photo.url = urls[photo.id];
                 }
+                self.currentPhotos.push(photo);
             }
             
             self.visiblePhotos = self.currentPhotos;
-            self.renderPhotos();
-        }).catch(function(error) {
-            console.error('Ошибка загрузки фото:', error);
-            if (container) container.innerHTML = '<p>Ошибка загрузки</p>';
+            self.renderPhotos(offset > 0);
+            
+            // Если есть ещё фото — показываем кнопку "Загрузить ещё"
+            if (offset + BATCH_SIZE < allPhotos.length) {
+                self.showLoadMoreButton(folderId, offset + BATCH_SIZE, allPhotos);
+            }
         });
-    },
+    }).catch(function(error) {
+        console.error('Ошибка загрузки фото:', error);
+        if (offset === 0 && container) {
+            container.innerHTML = '<p>Ошибка загрузки</p>';
+        }
+    });
+},
+
+showLoadMoreButton: function(folderId, nextOffset, allPhotos) {
+    var self = this;
+    var container = document.getElementById('photos-container');
+    if (!container) return;
+    
+    // Удаляем старую кнопку если есть
+    var oldBtn = document.getElementById('load-more-container');
+    if (oldBtn) oldBtn.remove();
+    
+    var loadMoreDiv = document.createElement('div');
+    loadMoreDiv.id = 'load-more-container';
+    loadMoreDiv.style.cssText = 'grid-column:1/-1;text-align:center;padding:20px;';
+    loadMoreDiv.innerHTML = '<button id="load-more-btn" style="padding:15px 30px;background:rgba(0,0,0,0.05);border:none;border-radius:8px;cursor:pointer;color:#666;font-size:16px;">+ Загрузить ещё фото</button>';
+    
+    container.appendChild(loadMoreDiv);
+    
+    document.getElementById('load-more-btn').onclick = function() {
+        this.textContent = 'Загружается...';
+        self.loadPhotos(folderId, nextOffset);
+    };
+},
 
     // Показываем фото на странице
     renderPhotos: function() {
