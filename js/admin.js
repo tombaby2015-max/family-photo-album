@@ -555,90 +555,96 @@ setFolderCover: function() {
         location.reload(true);
     }
 };
+    // === ОБНОВЛЕНИЕ СТРАНИЦЫ ===
 
-// === ПРОСМОТР ХРАНИЛИЩА ===
+    reloadPage: function() {
+        location.reload(true);
+    },
 
-viewStorage: function() {
-    var token = api.getToken();
-    
-    if (!token) {
-        alert('Ошибка: не авторизован');
-        return;
-    }
-    
-    // Создаём модальное окно
-    var modal = document.getElementById('storage-viewer');
-    if (modal) modal.remove();
-    
-    modal = document.createElement('div');
-    modal.id = 'storage-viewer';
-    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:10002;overflow:auto;display:none;';
-    modal.innerHTML = 
-        '<div style="background:#fff;max-width:900px;margin:50px auto;padding:30px;border-radius:8px;position:relative;">' +
-            '<button onclick="document.getElementById(\'storage-viewer\').remove()" style="position:absolute;top:15px;right:15px;background:none;border:none;font-size:24px;cursor:pointer;">×</button>' +
-            '<h2 style="margin-top:0;">📦 Данные хранилища</h2>' +
-            '<div id="storage-content" style="font-family:monospace;font-size:13px;line-height:1.6;">' +
-                '<p>Загрузка...</p>' +
-            '</div>' +
-        '</div>';
-    
-    document.body.appendChild(modal);
-    modal.style.display = 'block';
-    
-    // Загружаем данные через API
-    fetch(API_BASE + '/admin/storage-info', {
-        headers: { 'Authorization': 'Bearer ' + token }
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(response) {
-        if (!response.success) {
-            document.getElementById('storage-content').innerHTML = '<p style="color:red;">Ошибка: ' + (response.error || 'Unknown error') + '</p>';
+    // === ПРОСМОТР ХРАНИЛИЩА ===
+
+    viewStorage: function() {
+        var token = api.getToken();
+        
+        if (!token) {
+            alert('Ошибка: не авторизован');
             return;
         }
         
-        // Формируем HTML с данными
-        var folders = response.folders || [];
-        var photos = response.photos || [];
+        // Создаём модальное окно
+        var modal = document.getElementById('storage-viewer');
+        if (modal) modal.remove();
         
-        var html = '';
+        modal = document.createElement('div');
+        modal.id = 'storage-viewer';
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:10002;overflow:auto;display:none;';
+        modal.innerHTML = 
+            '<div style="background:#fff;max-width:900px;margin:50px auto;padding:30px;border-radius:8px;position:relative;">' +
+                '<button onclick="document.getElementById(\'storage-viewer\').remove()" style="position:absolute;top:15px;right:15px;background:none;border:none;font-size:24px;cursor:pointer;">×</button>' +
+                '<h2 style="margin-top:0;">📦 Данные хранилища</h2>' +
+                '<div id="storage-content" style="font-family:monospace;font-size:13px;line-height:1.6;">' +
+                    '<p>Загрузка...</p>' +
+                '</div>' +
+            '</div>';
         
-        // Статистика
-        html += '<h3>📊 Статистика</h3>';
-        html += '<p><strong>Папок:</strong> ' + folders.length + '</p>';
-        html += '<p><strong>Фото:</strong> ' + photos.length + '</p>';
+        document.body.appendChild(modal);
+        modal.style.display = 'block';
         
-        // Папки
-        html += '<h3 style="margin-top:20px;">📁 ПАПКИ</h3>';
-        html += '<table style="width:100%;border-collapse:collapse;">';
-        html += '<tr style="background:#f0f0f0;"><th style="padding:8px;border:1px solid #ddd;">ID</th><th style="padding:8px;border:1px solid #ddd;">Название</th><th style="padding:8px;border:1px solid #ddd;">Скрыта</th></tr>';
-        
-        for (var i = 0; i < folders.length; i++) {
-            var f = folders[i];
-            html += '<tr>';
-            html += '<td style="padding:8px;border:1px solid #ddd;">' + f.id + '</td>';
-            html += '<td style="padding:8px;border:1px solid #ddd;">' + f.title + '</td>';
-            html += '<td style="padding:8px;border:1px solid #ddd;">' + (f.hidden ? '✓' : '') + '</td>';
-            html += '</tr>';
-        }
-        html += '</table>';
-        
-        // Фото
-        var activePhotos = 0;
-        var deletedPhotos = 0;
-        for (var j = 0; j < photos.length; j++) {
-            if (photos[j].deleted) deletedPhotos++;
-            else activePhotos++;
-        }
-        
-        html += '<h3 style="margin-top:20px;">📷 ФОТО</h3>';
-        html += '<p>Активных: ' + activePhotos + ' | Удалённых: ' + deletedPhotos + '</p>';
-        
-        document.getElementById('storage-content').innerHTML = html;
-    })
-    .catch(function(error) {
-        document.getElementById('storage-content').innerHTML = '<p style="color:red;">Ошибка загрузки: ' + error.message + '</p>';
-    });
-},
+        // Загружаем данные через API
+        fetch(API_BASE + '/admin/storage-info', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(response) {
+            if (!response.success) {
+                document.getElementById('storage-content').innerHTML = '<p style="color:red;">Ошибка: ' + (response.error || 'Unknown error') + '</p>';
+                return;
+            }
+            
+            // Формируем HTML с данными
+            var folders = response.folders || [];
+            var photos = response.photos || [];
+            
+            var html = '';
+            
+            // Статистика
+            html += '<h3>📊 Статистика</h3>';
+            html += '<p><strong>Папок:</strong> ' + folders.length + '</p>';
+            html += '<p><strong>Фото:</strong> ' + photos.length + '</p>';
+            
+            // Папки
+            html += '<h3 style="margin-top:20px;">📁 ПАПКИ</h3>';
+            html += '<table style="width:100%;border-collapse:collapse;">';
+            html += '<tr style="background:#f0f0f0;"><th style="padding:8px;border:1px solid #ddd;">ID</th><th style="padding:8px;border:1px solid #ddd;">Название</th><th style="padding:8px;border:1px solid #ddd;">Скрыта</th></tr>';
+            
+            for (var i = 0; i < folders.length; i++) {
+                var f = folders[i];
+                html += '<tr>';
+                html += '<td style="padding:8px;border:1px solid #ddd;">' + f.id + '</td>';
+                html += '<td style="padding:8px;border:1px solid #ddd;">' + f.title + '</td>';
+                html += '<td style="padding:8px;border:1px solid #ddd;">' + (f.hidden ? '✓' : '') + '</td>';
+                html += '</tr>';
+            }
+            html += '</table>';
+            
+            // Фото
+            var activePhotos = 0;
+            var deletedPhotos = 0;
+            for (var j = 0; j < photos.length; j++) {
+                if (photos[j].deleted) deletedPhotos++;
+                else activePhotos++;
+            }
+            
+            html += '<h3 style="margin-top:20px;">📷 ФОТО</h3>';
+            html += '<p>Активных: ' + activePhotos + ' | Удалённых: ' + deletedPhotos + '</p>';
+            
+            document.getElementById('storage-content').innerHTML = html;
+        })
+        .catch(function(error) {
+            document.getElementById('storage-content').innerHTML = '<p style="color:red;">Ошибка загрузки: ' + error.message + '</p>';
+        });
+    }
+};
 
 // При загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
