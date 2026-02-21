@@ -657,55 +657,55 @@ confirmClearStorage: function() {
     }
 };
 
-// === ВОССТАНОВЛЕНИЕ ИЗ БЭКАПА ===
-restoreFromBackup: function() {
-    // Создаём скрытый input, если ещё нет
-    var input = document.getElementById('restore-backup-file');
-    if (!input) {
-        input = document.createElement('input');
-        input.type = 'file';
-        input.id = 'restore-backup-file';
-        input.accept = '.json';
-        input.style.display = 'none';
-        document.body.appendChild(input);
-    }
-
-    input.onchange = function() {
-        var file = input.files[0];
-        if (!file) return;
-
-        if (!confirm('⚠️ Восстановить данные из бэкапа?\nТекущие данные будут перезаписаны.')) {
-            input.value = '';
-            return;
+    // === ВОССТАНОВЛЕНИЕ ИЗ БЭКАПА ===
+    restoreFromBackup: function() {
+        var input = document.getElementById('restore-backup-file');
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'file';
+            input.id = 'restore-backup-file';
+            input.accept = '.json';
+            input.style.display = 'none';
+            document.body.appendChild(input);
         }
 
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                var backupData = JSON.parse(e.target.result);
-                api.restoreBackup(backupData).then(function(result) {
-                    if (result.success) {
-                        alert(
-                            '♻️ Восстановление завершено\n' +
-                            'Папок: ' + result.restoredFolders + '\n' +
-                            'Фото: ' + result.restoredPhotos
-                        );
-                        gallery.loadFolders();
-                    } else {
-                        alert('❌ Ошибка восстановления: ' + (result.error || 'unknown'));
-                    }
-                });
-            } catch (err) {
-                alert('❌ Неверный формат файла бэкапа');
+        input.onchange = function() {
+            var file = input.files[0];
+            if (!file) return;
+
+            if (!confirm('⚠️ Восстановить данные из бэкапа?\nТекущие данные будут перезаписаны.')) {
+                input.value = '';
+                return;
             }
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var backupData = JSON.parse(e.target.result);
+                    api.restoreBackup(backupData).then(function(result) {
+                        if (result.success) {
+                            alert(
+                                '♻️ Восстановление завершено\n' +
+                                'Папок: ' + result.restoredFolders + '\n' +
+                                'Фото: ' + result.restoredPhotos
+                            );
+                            gallery.loadFolders();
+                        } else {
+                            alert('❌ Ошибка восстановления: ' + (result.error || 'unknown'));
+                        }
+                    });
+                } catch (err) {
+                    alert('❌ Неверный формат файла бэкапа');
+                }
+            };
+
+            reader.readAsText(file);
+            input.value = '';
         };
 
-        reader.readAsText(file);
-        input.value = '';
-    };
-
-    input.click();
-}
+        input.click();
+    } // <-- если это последний метод объекта, запятую не ставить
+};
 
 // При загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
