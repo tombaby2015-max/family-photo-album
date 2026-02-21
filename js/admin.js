@@ -705,7 +705,7 @@ restoreFromBackup: function() {
     };
 
     input.click();
-},
+}
 
 // При загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
