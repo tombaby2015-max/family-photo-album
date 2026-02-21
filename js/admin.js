@@ -553,12 +553,6 @@ setFolderCover: function() {
 
     reloadPage: function() {
         location.reload(true);
-    }
-};
-    // === ОБНОВЛЕНИЕ СТРАНИЦЫ ===
-
-    reloadPage: function() {
-        location.reload(true);
     },
 
     // === ПРОСМОТР ХРАНИЛИЩА ===
