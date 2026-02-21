@@ -564,7 +564,7 @@ confirmClearStorage: function() {
             }
         });
     });
-}
+},
 
     // === ОБНОВЛЕНИЕ СТРАНИЦЫ ===
 
