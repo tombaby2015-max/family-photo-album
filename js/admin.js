@@ -526,28 +526,45 @@ setFolderCover: function() {
         document.getElementById('clear-storage-modal').style.display = 'none';
     },
 
-    confirmClearStorage: function() {
-        var password = document.getElementById('clear-storage-password').value;
-        var errorEl = document.getElementById('clear-storage-error');
+
+    // === Очитска хранилище ===
         
-        if (!password) {
-            errorEl.textContent = 'Введите пароль';
+confirmClearStorage: function() {
+    var password = document.getElementById('clear-storage-password').value;
+    var errorEl = document.getElementById('clear-storage-error');
+
+    if (!password) {
+        errorEl.textContent = 'Введите пароль';
+        return;
+    }
+
+    var self = this;
+
+    api.login(password).then(function(result) {
+        if (!result.success) {
+            errorEl.textContent = 'Неверный пароль';
             return;
         }
-        
-        var self = this;
-        api.login(password).then(function(result) {
-            if (!result.success) {
-                errorEl.textContent = 'Неверный пароль';
-                return;
+
+        if (!confirm('⚠️ Это удалит ВСЕ папки и фото из хранилища.\nАдмин-токены останутся.\n\nПродолжить?')) {
+            return;
+        }
+
+        api.clearStorage().then(function(result) {
+            if (result.success) {
+                alert(
+                    '✅ Хранилище очищено\n' +
+                    'Папок: ' + result.deletedFolders + '\n' +
+                    'Фото: ' + result.deletedPhotos
+                );
+                self.closeClearStorageModal();
+                gallery.loadFolders();
+            } else {
+                alert('❌ Ошибка очистки: ' + (result.error || 'unknown'));
             }
-            
-            // Очистка KV — только для админов
-            // Это удалит ВСЕ данные из KV!
-            alert('Функция очистки требует ручного вмешательства. Обратитесь к разработчику.');
-            self.closeClearStorageModal();
         });
-    },
+    });
+}
 
     // === ОБНОВЛЕНИЕ СТРАНИЦЫ ===
 
