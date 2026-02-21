@@ -295,6 +295,18 @@ loadCoverUrl: function(folderId, fileId) {
         var titleText = document.getElementById('folder-title-text');
         
         if (coverSection) coverSection.style.display = 'none';
+// Настраиваем верхнюю полосу с обложкой папки
+var coverImage = document.getElementById('folder-cover-image');
+if (coverImage) {
+    if (folder.cover_url) {
+        // Если есть обложка — загружаем её
+        this.loadCoverForStrip(folder.cover_url, coverImage);
+    } else {
+        // Если нет обложки — стандартное фото
+        coverImage.style.backgroundImage = "url('https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg')";
+    }
+}
+        
         if (mainPage) mainPage.style.display = 'none';
         if (mainFooter) mainFooter.style.display = 'none';
         if (folderPage) folderPage.style.display = 'block';
