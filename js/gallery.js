@@ -298,13 +298,10 @@ loadCoverUrl: function(folderId, fileId) {
 // Настраиваем верхнюю полосу с обложкой папки
 var coverImage = document.getElementById('folder-cover-image');
 if (coverImage) {
-    if (folder.cover_url) {
-        // Если есть обложка — загружаем её
-        this.loadCoverForStrip(folder.cover_url, coverImage);
-    } else {
-        // Если нет обложки — стандартное фото
-        coverImage.style.backgroundImage = "url('https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg')";
-    }
+    coverImage.style.backgroundImage =
+        "url('https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg')";
+    coverImage.style.backgroundSize = 'cover';
+    coverImage.style.backgroundPosition = 'center';
 }
         
         if (mainPage) mainPage.style.display = 'none';
@@ -321,28 +318,7 @@ if (coverImage) {
         window.scrollTo(0, 0);
     },
 
-// Загружаем обложку для верхней полосы
-loadCoverForStrip: function(fileId, element) {
-    fetch(API_BASE + '/photos/urls', {
-        method: 'POST',
-        headers: api.getHeaders(api.isAdmin()),
-        body: JSON.stringify({ 
-            folder_id: 'covers',
-            photos: [{ id: 'strip', file_id: fileId }]
-        })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.urls && data.urls.strip) {
-            element.style.backgroundImage = 'url(\'' + data.urls.strip + '\')';
-        }
-    })
-    .catch(function(e) {
-        console.error('Ошибка загрузки обложки для полосы:', e);
-    });
-},
-    
-    // Возвращаемся на главную страницу
+     // Возвращаемся на главную страницу
 showMainPage: function() {
     this.editingFolder = null;
     
