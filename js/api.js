@@ -1,22 +1,30 @@
-var API_BASE = 'https://photo-app-backend.belovolov-email.workers.dev';
+// api.js — связь сайта с сервером (новая версия)
+// Работает с Telegram ID вместо старых f1, f2, p1, p2
+
+var API_BASE = 'https://photo-backend.help-baby2015.workers.dev';
 
 var api = {
+    // Получаем токен из памяти браузера
     getToken: function() {
         return localStorage.getItem('admin_token');
     },
 
+    // Проверяем, вошли ли мы как админ
     isAdmin: function() {
         return !!this.getToken();
     },
 
+    // Сохраняем токен
     setToken: function(token) {
         localStorage.setItem('admin_token', token);
     },
 
+    // Удаляем токен (выход)
     clearToken: function() {
         localStorage.removeItem('admin_token');
     },
 
+    // Заголовки для запросов
     getHeaders: function(isAdmin) {
         var headers = {
             'Content-Type': 'application/json'
@@ -27,6 +35,7 @@ var api = {
         return headers;
     },
 
+    // === ВХОД В АДМИНКУ ===
     login: function(password) {
         var self = this;
         return fetch(API_BASE + '/admin/login', {
@@ -50,24 +59,19 @@ var api = {
         this.clearToken();
     },
 
-    getFolders: function(offset) {
-        offset = offset || 0;
-        return fetch(API_BASE + '/folders?offset=' + offset, {
+    // === ПАПКИ ===
+    
+    // Получить список папок
+    getFolders: function() {
+        return fetch(API_BASE + '/folders', {
             headers: this.getHeaders(this.isAdmin())
         })
         .then(function(response) { return response.json(); })
-        .catch(function() { return { folders: [], hasMore: false, total: 0 }; });
+        .then(function(data) { return data.folders || []; })
+        .catch(function() { return []; });
     },
 
-    createFolder: function(title) {
-        return fetch(API_BASE + '/folders', {
-            method: 'POST',
-            headers: this.getHeaders(true),
-            body: JSON.stringify({ title: title })
-        }).then(function(response) { return response.json(); })
-          .catch(function() { return null; });
-    },
-
+    // Изменить папку (название, скрытость, порядок, обложка)
     updateFolder: function(folderId, updates) {
         var body = { id: folderId };
         for (var key in updates) {
@@ -81,83 +85,7 @@ var api = {
           .catch(function() { return null; });
     },
 
-    deleteFolder: function(folderId) {
-        return fetch(API_BASE + '/folders?id=' + folderId, {
-            method: 'DELETE',
-            headers: this.getHeaders(true)
-        }).then(function(response) { return response.json(); })
-          .catch(function() { return null; });
-    },
-
-    // === НОВОЕ: два эндпоинта вместо одного ===
-    
-    // Получаем список фото без URL (этап 1)
-    getPhotosList: function(folderId, offset) {
-        offset = offset || 0;
-        return fetch(API_BASE + '/photos/list?folder_id=' + folderId + '&offset=' + offset, {
-            headers: this.getHeaders(this.isAdmin())
-        })
-        .then(function(response) { return response.json(); })
-        .catch(function() { return { photos: [], hasMore: false, total: 0 }; });
-    },
-
-    // Получаем URL для массива ID фото (этап 2)
-    getPhotosUrls: function(photoIds) {
-        return fetch(API_BASE + '/photos/urls', {
-            method: 'POST',
-            headers: this.getHeaders(this.isAdmin()),
-            body: JSON.stringify({ photo_ids: photoIds })
-        })
-        .then(function(response) { return response.json(); })
-        .then(function(data) { return data.urls || {}; })
-        .catch(function() { return {}; });
-    },
-
-    // === УДАЛЕНО: старый getPhotos ===
-
-    uploadPhoto: function(folderId, file) {
-        var self = this;
-        return this.getFileUrl(file).then(function(fileUrl) {
-            return fetch(API_BASE + '/photos', {
-                method: 'POST',
-                headers: self.getHeaders(true),
-                body: JSON.stringify({ folder_id: folderId, file_url: fileUrl })
-            }).then(function(response) { return response.json(); });
-        }).catch(function() { return null; });
-    },
-
-    updatePhoto: function(photoId, updates) {
-        var body = { id: photoId };
-        for (var key in updates) {
-            body[key] = updates[key];
-        }
-        return fetch(API_BASE + '/photos', {
-            method: 'PATCH',
-            headers: this.getHeaders(true),
-            body: JSON.stringify(body)
-        }).then(function(response) { return response.json(); })
-          .catch(function() { return null; });
-    },
-
-    deletePhoto: function(photoId) {
-        return fetch(API_BASE + '/photos?id=' + photoId, {
-            method: 'DELETE',
-            headers: this.getHeaders(true)
-        }).then(function(response) { return response.json(); })
-          .catch(function() { return null; });
-    },
-
-    getFileUrl: function(file) {
-        return new Promise(function(resolve, reject) {
-            var reader = new FileReader();
-            reader.onloadend = function() {
-                resolve(reader.result);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-    },
-
+    // Изменить порядок папок
     reorderFolders: function(orders) {
         return fetch(API_BASE + '/folders/reorder', {
             method: 'POST',
@@ -167,17 +95,48 @@ var api = {
           .catch(function() { return null; });
     },
 
-    deleteStorage: function() {
-        return fetch(API_BASE + '/admin/storage', {
-            method: 'DELETE',
-            headers: this.getHeaders(true)
-        }).then(function(response) { 
-            return response.json(); 
-        }).catch(function() { 
-            return { success: false, error: 'Ошибка соединения' }; 
-        });
+    // === ФОТО ===
+    
+    // Получить список фото в папке (без ссылок, только ID и file_id)
+    getPhotosList: function(folderId) {
+        return fetch(API_BASE + '/photos/list?folder_id=' + folderId, {
+            headers: this.getHeaders(this.isAdmin())
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) { return data.photos || []; })
+        .catch(function() { return []; });
     },
 
-    // === УДАЛЕНО: syncStorage ===
+    // Получить ссылки на фото от Telegram
+    getPhotosUrls: function(folderId, photos) {
+        return fetch(API_BASE + '/photos/urls', {
+            method: 'POST',
+            headers: this.getHeaders(this.isAdmin()),
+            body: JSON.stringify({ 
+                folder_id: folderId,
+                photos: photos 
+            })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) { return data.urls || {}; })
+        .catch(function() { return {}; });
+    },
 
+    // Удалить фото (мягкое удаление — помечаем deleted: true)
+    deletePhoto: function(folderId, photoId) {
+        return fetch(API_BASE + '/photos?id=' + photoId + '&folder_id=' + folderId, {
+            method: 'DELETE',
+            headers: this.getHeaders(true)
+        }).then(function(response) { return response.json(); })
+          .catch(function() { return null; });
+    },
+
+    // === БЭКАП ===
+    createBackup: function() {
+        return fetch(API_BASE + '/admin/backup', {
+            method: 'POST',
+            headers: this.getHeaders(true)
+        }).then(function(response) { return response.json(); })
+          .catch(function() { return { success: false }; });
+    }
 };
