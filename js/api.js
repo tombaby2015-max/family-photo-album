@@ -152,5 +152,21 @@ var api = {
         .catch(function() {
             return { success: false, error: 'Ошибка соединения' };
         });
-    }
+    },
+
+    // === ВОССТАНОВЛЕНИЕ ИЗ БЭКАПА ===
+restoreBackup: function(backupData) {
+    return fetch(API_BASE + '/admin/restore', {
+        method: 'POST',
+        headers: this.getHeaders(true),
+        body: JSON.stringify(backupData)
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .catch(function() {
+        return { success: false, error: 'Ошибка соединения' };
+    });
+}
+    
 };
