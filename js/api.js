@@ -138,5 +138,19 @@ var api = {
             headers: this.getHeaders(true)
         }).then(function(response) { return response.json(); })
           .catch(function() { return { success: false }; });
+    },
+
+    // === ОЧИСТКА ХРАНИЛИЩА (папки и фото) ===
+    clearStorage: function() {
+        return fetch(API_BASE + '/admin/clear-storage', {
+            method: 'POST',
+            headers: this.getHeaders(true)
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .catch(function() {
+            return { success: false, error: 'Ошибка соединения' };
+        });
     }
 };
