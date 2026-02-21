@@ -814,3 +814,38 @@ html, body {
 }
 
 }
+
+/* =============================== */
+/* ЭФФЕКТ НАВЕДЕНИЯ НА ПАПКИ       */
+/* =============================== */
+
+.folder-card {
+    cursor: pointer;
+    position: relative;
+    transition:
+        transform 0.28s cubic-bezier(.4,0,.2,1),
+        box-shadow 0.28s cubic-bezier(.4,0,.2,1);
+    will-change: transform;
+}
+
+.folder-card:hover {
+    transform: translateY(-4px) scale(1.025);
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.18);
+    z-index: 5;
+}
+
+.folder-card.editing,
+.folder-card.editing:hover {
+    transform: none;
+    box-shadow: 0 0 0 3px #3498db;
+}
+
+.sortable-drag,
+.sortable-ghost {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+#folders-container {
+    overflow: visible;
+}
