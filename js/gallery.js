@@ -321,6 +321,27 @@ if (coverImage) {
         window.scrollTo(0, 0);
     },
 
+// Загружаем обложку для верхней полосы
+loadCoverForStrip: function(fileId, element) {
+    fetch(API_BASE + '/photos/urls', {
+        method: 'POST',
+        headers: api.getHeaders(api.isAdmin()),
+        body: JSON.stringify({ 
+            folder_id: 'covers',
+            photos: [{ id: 'strip', file_id: fileId }]
+        })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.urls && data.urls.strip) {
+            element.style.backgroundImage = 'url(\'' + data.urls.strip + '\')';
+        }
+    })
+    .catch(function(e) {
+        console.error('Ошибка загрузки обложки для полосы:', e);
+    });
+},
+    
     // Возвращаемся на главную страницу
 showMainPage: function() {
     this.editingFolder = null;
