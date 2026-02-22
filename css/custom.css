@@ -78,9 +78,10 @@
     display: flex;
     justify-content: center;
     gap: 10px;
-    flex-wrap: wrap;
-    max-width: 900px;
+    flex-wrap: nowrap;
+    max-width: 1200px;
     margin: 0 auto;
+    overflow-x: auto;
 }
 .admin-panel__buttons .admin-btn {
     width: 200px;
