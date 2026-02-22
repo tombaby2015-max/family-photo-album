@@ -9,6 +9,7 @@ var admin = {
     isSelectionMode: false,
     isAllSelected: false,
     excludedPhotos: [],
+    selectedPhotos: [],
   
     // === ВХОД И ВЫХОД ===
     openModal: function() {
@@ -309,6 +310,7 @@ var admin = {
         this.isSelectionMode = true;
         this.isAllSelected = false;
         this.excludedPhotos = [];
+        this.selectedPhotos = [];
        
         // Скрываем кнопку "Выбрать фото", показываем панель действий
         var selectBtn = document.querySelector('#sidebar-admin-buttons > .admin-btn');
@@ -331,6 +333,7 @@ var admin = {
         this.isSelectionMode = false;
         this.isAllSelected = false;
         this.excludedPhotos = [];
+        this.selectedPhotos = [];
        
         // Показываем кнопку "Выбрать фото", скрываем панель действий
         var selectBtn = document.querySelector('#sidebar-admin-buttons > .admin-btn');
@@ -367,7 +370,15 @@ var admin = {
             };
            
             photo.appendChild(checkbox);
-            if (this.isAllSelected) {
+
+            // Устанавливаем начальное состояние
+            var shouldCheck = false;
+            if (self.isAllSelected) {
+                shouldCheck = self.excludedPhotos.indexOf(photoId) === -1;
+            } else {
+                shouldCheck = self.selectedPhotos.indexOf(photoId) > -1;
+            }
+            if (shouldCheck) {
                 checkbox.classList.add('checked');
                 checkbox.innerHTML = '✓';
             }
@@ -382,10 +393,10 @@ var admin = {
     },
    
     toggleSelectAll: function() {
-        var btn = document.getElementById('btn-select-all');
-        var checkboxes = document.querySelectorAll('.photo-checkbox-custom');
         this.isAllSelected = !this.isAllSelected;
         this.excludedPhotos = [];
+        this.selectedPhotos = [];
+        var checkboxes = document.querySelectorAll('.photo-checkbox-custom');
         for (var i = 0; i < checkboxes.length; i++) {
             if (this.isAllSelected) {
                 checkboxes[i].classList.add('checked');
@@ -395,44 +406,86 @@ var admin = {
                 checkboxes[i].innerHTML = '';
             }
         }
-        if (btn) {
-            btn.textContent = this.isAllSelected
-                ? 'Снять все выделения'
-                : 'Выбрать все';
-        }
         this.updateSelectionCount();
     },
    
     togglePhotoSelection: function(photoId, checkboxEl) {
-        // ⛔ Клик по фото разрешён ТОЛЬКО если isAllSelected === true
-        if (!this.isAllSelected) {
-            return;
-        }
-        var index = this.excludedPhotos.indexOf(photoId);
-        if (index > -1) {
-            // Убираем из исключений (фото снова выбрано)
-            this.excludedPhotos.splice(index, 1);
-            checkboxEl.classList.add('checked');
-            checkboxEl.innerHTML = '✓';
+        if (this.isAllSelected) {
+            var index = this.excludedPhotos.indexOf(photoId);
+            if (index > -1) {
+                // Currently excluded, select it
+                this.excludedPhotos.splice(index, 1);
+                checkboxEl.classList.add('checked');
+                checkboxEl.innerHTML = '✓';
+            } else {
+                // Currently selected, deselect it
+                this.excludedPhotos.push(photoId);
+                checkboxEl.classList.remove('checked');
+                checkboxEl.innerHTML = '';
+            }
         } else {
-            // Добавляем в исключения (фото снято с выбора)
-            this.excludedPhotos.push(photoId);
-            checkboxEl.classList.remove('checked');
-            checkboxEl.innerHTML = '';
+            var index = this.selectedPhotos.indexOf(photoId);
+            if (index > -1) {
+                // Currently selected, deselect it
+                this.selectedPhotos.splice(index, 1);
+                checkboxEl.classList.remove('checked');
+                checkboxEl.innerHTML = '';
+            } else {
+                // Currently not selected, select it
+                this.selectedPhotos.push(photoId);
+                checkboxEl.classList.add('checked');
+                checkboxEl.innerHTML = '✓';
+            }
         }
+        this.adjustSelectionMode();
         this.updateSelectionCount();
+    },
+
+    adjustSelectionMode: function() {
+        var total = gallery.currentPhotos.length;
+        var count = this.isAllSelected ? total - this.excludedPhotos.length : this.selectedPhotos.length;
+        var btn = document.getElementById('btn-select-all');
+        if (count === 0) {
+            this.isAllSelected = false;
+            this.excludedPhotos = [];
+            this.selectedPhotos = [];
+            if (btn) btn.textContent = 'Выбрать все';
+        } else if (count === total) {
+            this.isAllSelected = true;
+            this.excludedPhotos = [];
+            this.selectedPhotos = [];
+            if (btn) btn.textContent = 'Снять все выделения';
+        } else {
+            // If partially selected and in all mode, switch to selected mode
+            if (this.isAllSelected) {
+                this.selectedPhotos = [];
+                gallery.currentPhotos.forEach(function(photo) {
+                    if (this.excludedPhotos.indexOf(photo.id) === -1) {
+                        this.selectedPhotos.push(photo.id);
+                    }
+                }, this);
+                this.excludedPhotos = [];
+                this.isAllSelected = false;
+                if (btn) btn.textContent = 'Выбрать все';
+            } else {
+                if (btn) btn.textContent = 'Выбрать все';
+            }
+        }
     },
    
     updateSelectionCount: function() {
         var btn = document.getElementById('btn-delete-selected');
         var total = gallery.currentPhotos.length;
-        var count = this.isAllSelected
-            ? total - this.excludedPhotos.length
-            : 0;
+        var count = this.isAllSelected ? total - this.excludedPhotos.length : this.selectedPhotos.length;
         if (btn) {
             btn.textContent = 'Удалить выбранные (' + count + ')';
             btn.disabled = count === 0;
             btn.style.opacity = count === 0 ? '0.5' : '1';
+        }
+        // Update select all button text based on current state
+        var selectAllBtn = document.getElementById('btn-select-all');
+        if (selectAllBtn) {
+            selectAllBtn.textContent = this.isAllSelected ? 'Снять все выделения' : 'Выбрать все';
         }
     },
    
@@ -443,13 +496,13 @@ var admin = {
         var allPhotos = gallery.currentPhotos;
         var ids = [];
         if (this.isAllSelected) {
-            // Выбраны все кроме исключений
-            for (var i = 0; i < allPhotos.length; i++) {
-                var id = allPhotos[i].id;
-                if (this.excludedPhotos.indexOf(id) === -1) {
-                    ids.push(id);
+            allPhotos.forEach(function(photo) {
+                if (this.excludedPhotos.indexOf(photo.id) === -1) {
+                    ids.push(photo.id);
                 }
-            }
+            }, this);
+        } else {
+            ids = this.selectedPhotos.slice();
         }
         if (!ids.length) return;
         if (!confirm('Удалить ' + ids.length + ' фото?')) return;
