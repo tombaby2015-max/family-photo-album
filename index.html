@@ -76,7 +76,7 @@
                     <div class="admin-panel__title">Панель администратора</div>
                     <div class="admin-panel__buttons">
                         <button class="admin-btn" onclick="admin.manualBackup()">💾 Сделать бэкап</button>
-                        <button onclick="admin.restoreFromBackup()">♻️ Восстановить из бэкапа</button>
+                        <button class="admin-btn" onclick="admin.restoreFromBackup()">♻️ Восстановить из бэкапа</button>
                         <button class="admin-btn" onclick="admin.viewStorage()">👁️ Посмотреть хранилище</button>
                         <button class="admin-btn" onclick="admin.reloadPage()">🔄 Обновить страницу</button>
                         <button class="admin-btn" onclick="admin.openClearStorageModal()" style="background: #e74c3c; color: #fff; border-color: #c0392b; width: 200px;">🗑️ Удалить хранилище</button>
@@ -128,24 +128,20 @@
                 </a>
                 
                 <div class="sidebar-admin-buttons" id="sidebar-admin-buttons" style="display:none;">
-    <!-- ИНСТРУКЦИЯ: фото загружаются через Telegram -->
-    <div style="background:#e8f4f8;padding:10px;border-radius:5px;margin-bottom:10px;font-size:12px;color:#333;">
-        <strong>📱 Загрузка фото:</strong><br>
-        Загружайте фото напрямую в эту тему в Telegram
-    </div>
-    
-    <button class="admin-btn" onclick="admin.renameFolder()">✏️ Переименовать</button>
-    <button class="admin-btn danger" onclick="admin.deleteFolder()">🗑️ Скрыть папку</button>
-    <button class="admin-btn" onclick="admin.enterSelectionMode()">☐ Выбрать фото</button>
-</div>
+                    <button class="admin-btn" onclick="admin.enterSelectionMode()">☐ Выбрать фото</button>
+                    <div id="selection-toolbar" style="display:none; flex-direction:column; gap:8px; margin-top:10px;">
+                        <button class="admin-btn" id="btn-select-all" onclick="admin.toggleSelectAll()">Выбрать все</button>
+                        <button class="admin-btn danger" id="btn-delete-selected" onclick="admin.deleteSelectedPhotos()" disabled>Удалить выбранные (0)</button>
+                        <button class="admin-btn" onclick="admin.exitSelectionMode()">✕ Отмена</button>
+                    </div>
+                </div>
             </div>
             
-<!-- Панель выбора фото (появляется при нажатии "Выбрать фото") -->
-<div id="selection-toolbar" style="display:none; flex-direction:column; gap:8px; margin-top:10px;">
-    <button class="admin-btn" id="btn-select-all" onclick="admin.toggleSelectAll()">Выбрать все</button>
-    <button class="admin-btn danger" id="btn-delete-selected" onclick="admin.deleteSelectedPhotos()" disabled>Удалить выбранные (0)</button>
-    <button class="admin-btn" onclick="admin.exitSelectionMode()">✕ Отмена</button>
-</div>
+            <div class="photos-grid" id="photos-container">
+                <div class="loading">Загрузка фото...</div>
+            </div>
+        </div>
+    </div>
 
     <!-- МОДАЛЬНОЕ ОКНО ОЧИСТКИ ХРАНИЛИЩА -->
     <div id="clear-storage-modal" class="admin-modal" style="display:none; z-index: 10001;">
