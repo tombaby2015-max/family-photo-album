@@ -140,18 +140,12 @@
 </div>
             </div>
             
-            <!-- ИСПРАВЛЕНО: добавлен toolbar для массового удаления -->
-            <div id="photo-toolbar" style="display:none; margin-bottom:15px; padding:10px; background:#f8f9fa; border-radius:5px;">
-                <button id="btn-select-all" onclick="admin.toggleSelectAll()" style="background:#3498db;color:#fff;border:none;padding:8px 15px;border-radius:4px;cursor:pointer;margin-right:10px;">☐ Выбрать все</button>
-                <button id="btn-delete-selected" onclick="admin.deleteSelectedPhotos()" style="background:#e74c3c;color:#fff;border:none;padding:8px 15px;border-radius:4px;cursor:pointer;margin-right:10px;">🗑 Удалить выбранные (0)</button>
-                <button onclick="admin.exitSelectionMode()" style="background:#95a5a6;color:#fff;border:none;padding:8px 15px;border-radius:4px;cursor:pointer;">✕ Отмена</button>
-            </div>
-            
-           <div class="photos-grid" id="photos-container">
-                <div class="loading">Загрузка фото...</div>
-            </div>
-        </div>
-    </div>
+<!-- Панель выбора фото (появляется при нажатии "Выбрать фото") -->
+<div id="selection-toolbar" style="display:none; flex-direction:column; gap:8px; margin-top:10px;">
+    <button class="admin-btn" id="btn-select-all" onclick="admin.toggleSelectAll()">Выбрать все</button>
+    <button class="admin-btn danger" id="btn-delete-selected" onclick="admin.deleteSelectedPhotos()" disabled>Удалить выбранные (0)</button>
+    <button class="admin-btn" onclick="admin.exitSelectionMode()">✕ Отмена</button>
+</div>
 
     <!-- МОДАЛЬНОЕ ОКНО ОЧИСТКИ ХРАНИЛИЩА -->
     <div id="clear-storage-modal" class="admin-modal" style="display:none; z-index: 10001;">
