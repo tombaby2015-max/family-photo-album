@@ -859,3 +859,80 @@ html, body {
 #folders-container {
     overflow: visible;
 }
+
+/* Стили для новой панели выбора фото */
+#selection-toolbar {
+    width: 100%;
+}
+
+#selection-toolbar .admin-btn {
+    width: 100%;
+    margin-bottom: 0;
+    border-radius: 50px;
+    transition: all 0.28s cubic-bezier(.4,0,.2,1);
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    color: #333;
+}
+
+#selection-toolbar .admin-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+#selection-toolbar .admin-btn.danger {
+    color: #c0392b;
+    border-color: #e0b0b0;
+}
+
+#selection-toolbar .admin-btn.danger:hover {
+    background: #fee;
+    border-color: #c0392b;
+}
+
+#selection-toolbar .admin-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Стили для чекбоксов на фото */
+.photo-checkbox-custom {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 28px;
+    height: 28px;
+    background: rgba(255,255,255,0.9);
+    border: 2px solid #27ae60;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #fff;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.photo-checkbox-custom.checked {
+    background: #27ae60;
+    border-color: #27ae60;
+}
+
+.photo-checkbox-custom:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+
+/* На мобильных чекбоксы всегда видны */
+@media (max-width: 768px) {
+    .photo-checkbox-custom {
+        opacity: 1;
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+    }
+}
