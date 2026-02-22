@@ -4,18 +4,18 @@ var admin = {
     inactivityTimer: null,
     inactivityTimeout: 15 * 60 * 1000, // 15 минут
     isAdminActive: false,
-   
+  
     // === СОСТОЯНИЕ ВЫБОРА ФОТО ===
     isSelectionMode: false,
     isAllSelected: false,
     excludedPhotos: [],
-   
+  
     // === ВХОД И ВЫХОД ===
     openModal: function() {
         var modal = document.getElementById('admin-modal');
         var passwordInput = document.getElementById('admin-password');
         var errorEl = document.getElementById('admin-error');
-       
+      
         if (modal) {
             modal.style.display = 'flex';
             if (passwordInput) passwordInput.value = '';
@@ -30,16 +30,16 @@ var admin = {
     login: function() {
         var passwordInput = document.getElementById('admin-password');
         var errorEl = document.getElementById('admin-error');
-       
+      
         if (!passwordInput) return;
-       
+      
         var password = passwordInput.value;
-       
+      
         if (!password) {
             if (errorEl) errorEl.textContent = 'Введите пароль';
             return;
         }
-       
+      
         var self = this;
         api.login(password).then(function(result) {
             if (result.success) {
@@ -68,20 +68,20 @@ var admin = {
     showAdminUI: function() {
         var adminPanel = document.getElementById('admin-panel');
         var folderAdminPanel = document.getElementById('sidebar-admin-buttons');
-       
+      
         if (adminPanel) adminPanel.style.display = 'block';
         if (folderAdminPanel) folderAdminPanel.style.display = 'flex';
-       
+      
         this.isAdminActive = true;
         gallery.loadFolders();
     },
     hideAdminUI: function() {
         var adminPanel = document.getElementById('admin-panel');
         var folderAdminPanel = document.getElementById('sidebar-admin-buttons');
-       
+      
         if (adminPanel) adminPanel.style.display = 'none';
         if (folderAdminPanel) folderAdminPanel.style.display = 'none';
-       
+      
         this.isAdminActive = false;
     },
     // === ТАЙМЕР БЕЗДЕЙСТВИЯ ===
@@ -114,7 +114,7 @@ var admin = {
             console.error('Нет токена для бэкапа');
             return;
         }
-       
+      
         api.createBackup().then(function(result) {
             if (result.success) {
                 console.log('✅ Бэкап создан:', reason);
@@ -128,12 +128,12 @@ var admin = {
     manualBackup: function() {
         var self = this;
         var token = api.getToken();
-       
+      
         if (!token) {
             alert('Ошибка: не авторизован');
             return;
         }
-       
+      
         api.createBackup().then(function(result) {
             if (result.success) {
                 alert('✅ Бэкап создан и отправлен в Telegram!');
@@ -148,16 +148,16 @@ var admin = {
     initSortable: function() {
         var container = document.getElementById('folders-container');
         if (!container || !api.isAdmin()) return;
-       
+      
         // На мобильных отключаем drag&drop
         var isMobile = window.matchMedia("(max-width: 768px)").matches;
         if (isMobile) {
             console.log('На мобильных перетаскивание отключено');
             return;
         }
-       
+      
         var self = this;
-       
+      
         new Sortable(container, {
             animation: 150,
             handle: '.folder-card',
@@ -172,16 +172,16 @@ var admin = {
                         newOrder.push({ id: id, order: i + 1 });
                     }
                 }
-               
+              
                 self.saveFoldersOrder(newOrder);
             }
         });
     },
     saveFoldersOrder: function(newOrder) {
         console.log('Сохраняю порядок:', newOrder);
-       
+      
         var self = this;
-       
+      
         api.reorderFolders(newOrder).then(function(result) {
             if (result && result.success) {
                 console.log('✅ Порядок сохранен');
@@ -198,12 +198,12 @@ var admin = {
     renameFolder: function(folderId, currentTitle) {
         var id = folderId || (gallery.currentFolder ? gallery.currentFolder.id : null);
         var title = currentTitle || (gallery.currentFolder ? gallery.currentFolder.title : '');
-       
+      
         if (!id) return;
-       
+      
         var newTitle = prompt('Новое название:', title);
         if (!newTitle || newTitle === title) return;
-       
+      
         var self = this;
         api.updateFolder(id, { title: newTitle }).then(function(result) {
             if (result) {
@@ -237,9 +237,9 @@ var admin = {
     deleteFolder: function(folderId) {
         var id = folderId || (gallery.currentFolder ? gallery.currentFolder.id : null);
         if (!id) return;
-       
+      
         if (!confirm('Удалить папку? Фото останутся в Telegram, но исчезнут с сайта.')) return;
-       
+      
         // На самом деле мы не удаляем папку полностью, а просто скрываем
         // Потому что в Telegram тема остаётся
         var self = this;
@@ -261,15 +261,15 @@ var admin = {
     // === УПРАВЛЕНИЕ ФОТО ===
     deletePhoto: function(photoId) {
         if (!confirm('Удалить фото? Оно исчезнет с сайта, но останется в Telegram.')) return;
-       
+      
         var self = this;
         var folderId = gallery.currentFolder ? gallery.currentFolder.id : null;
-       
+      
         if (!folderId) {
             alert('Ошибка: не выбрана папка');
             return;
         }
-       
+      
         api.deletePhoto(folderId, photoId).then(function(result) {
             if (result) {
                 self.createBackup('Удаление фото');
@@ -283,15 +283,15 @@ var admin = {
     },
     deleteCurrentPhoto: function() {
         if (gallery.currentPhotos.length === 0 || gallery.currentPhotoIndex < 0) return;
-       
+      
         var photo = gallery.currentPhotos[gallery.currentPhotoIndex];
         if (!photo) return;
-       
+      
         if (!confirm('Удалить это фото?')) return;
-       
+      
         var self = this;
         var folderId = gallery.currentFolder ? gallery.currentFolder.id : null;
-       
+      
         api.deletePhoto(folderId, photo.id).then(function(result) {
             if (result && gallery.currentFolder) {
                 self.createBackup('Удаление фото');
@@ -309,11 +309,11 @@ var admin = {
         this.isSelectionMode = true;
         this.isAllSelected = false;
         this.excludedPhotos = [];
-        
+       
         // Скрываем кнопку "Выбрать фото", показываем панель действий
         var selectBtn = document.querySelector('#sidebar-admin-buttons > .admin-btn');
         var toolbar = document.getElementById('selection-toolbar');
-        
+       
         if (selectBtn) selectBtn.style.display = 'none';
         if (toolbar) {
             toolbar.style.display = 'flex';
@@ -321,68 +321,71 @@ var admin = {
             var selectAllBtn = document.getElementById('btn-select-all');
             if (selectAllBtn) selectAllBtn.textContent = 'Выбрать все';
         }
-        
+       
         // Добавляем чекбоксы к фото
         this.addCheckboxesToPhotos();
         this.updateSelectionCount();
     },
-    
+   
     exitSelectionMode: function() {
         this.isSelectionMode = false;
         this.isAllSelected = false;
         this.excludedPhotos = [];
-        
+       
         // Показываем кнопку "Выбрать фото", скрываем панель действий
         var selectBtn = document.querySelector('#sidebar-admin-buttons > .admin-btn');
         var toolbar = document.getElementById('selection-toolbar');
-        
+       
         if (selectBtn) selectBtn.style.display = 'block';
         if (toolbar) toolbar.style.display = 'none';
-        
+       
         // Убираем чекбоксы
         this.removeCheckboxesFromPhotos();
     },
-    
+   
     addCheckboxesToPhotos: function() {
         var photos = document.querySelectorAll('.photo-item');
         var self = this;
-        
+       
         for (var i = 0; i < photos.length; i++) {
             var photo = photos[i];
+            if (photo.querySelector('.photo-checkbox-custom')) {
+                continue;
+            }
             var photoId = photo.getAttribute('data-id');
-            
+           
             // Создаём чекбокс
             var checkbox = document.createElement('div');
             checkbox.className = 'photo-checkbox-custom';
             checkbox.setAttribute('data-photo-id', photoId);
-            
+           
             // Обработчик клика
             checkbox.onclick = function(e) {
                 e.stopPropagation();
                 var id = this.getAttribute('data-photo-id');
                 self.togglePhotoSelection(id, this);
             };
-            
+           
             photo.appendChild(checkbox);
+            if (this.isAllSelected) {
+                checkbox.classList.add('checked');
+                checkbox.innerHTML = '✓';
+            }
         }
     },
-    
+   
     removeCheckboxesFromPhotos: function() {
         var checkboxes = document.querySelectorAll('.photo-checkbox-custom');
         for (var i = 0; i < checkboxes.length; i++) {
             checkboxes[i].remove();
         }
     },
-    
+   
     toggleSelectAll: function() {
         var btn = document.getElementById('btn-select-all');
         var checkboxes = document.querySelectorAll('.photo-checkbox-custom');
-
-        if (!btn) return;
-
         this.isAllSelected = !this.isAllSelected;
         this.excludedPhotos = [];
-
         for (var i = 0; i < checkboxes.length; i++) {
             if (this.isAllSelected) {
                 checkboxes[i].classList.add('checked');
@@ -392,15 +395,20 @@ var admin = {
                 checkboxes[i].innerHTML = '';
             }
         }
-
-        btn.textContent = this.isAllSelected ? 'Снять все выделение' : 'Выбрать все';
+        if (btn) {
+            btn.textContent = this.isAllSelected
+                ? 'Снять все выделения'
+                : 'Выбрать все';
+        }
         this.updateSelectionCount();
     },
-    
+   
     togglePhotoSelection: function(photoId, checkboxEl) {
-        // Работаем только в режиме "все выбраны" — добавляем/убираем из исключений
+        // ⛔ Клик по фото разрешён ТОЛЬКО если isAllSelected === true
+        if (!this.isAllSelected) {
+            return;
+        }
         var index = this.excludedPhotos.indexOf(photoId);
-
         if (index > -1) {
             // Убираем из исключений (фото снова выбрано)
             this.excludedPhotos.splice(index, 1);
@@ -412,32 +420,28 @@ var admin = {
             checkboxEl.classList.remove('checked');
             checkboxEl.innerHTML = '';
         }
-
         this.updateSelectionCount();
     },
-    
+   
     updateSelectionCount: function() {
         var btn = document.getElementById('btn-delete-selected');
         var total = gallery.currentPhotos.length;
-
         var count = this.isAllSelected
             ? total - this.excludedPhotos.length
             : 0;
-
         if (btn) {
             btn.textContent = 'Удалить выбранные (' + count + ')';
             btn.disabled = count === 0;
             btn.style.opacity = count === 0 ? '0.5' : '1';
         }
     },
-    
+   
     deleteSelectedPhotos: function() {
         var folderId = gallery.currentFolder ? gallery.currentFolder.id : null;
         if (!folderId) return;
-        
+       
         var allPhotos = gallery.currentPhotos;
         var ids = [];
-
         if (this.isAllSelected) {
             // Выбраны все кроме исключений
             for (var i = 0; i < allPhotos.length; i++) {
@@ -447,13 +451,10 @@ var admin = {
                 }
             }
         }
-
         if (!ids.length) return;
         if (!confirm('Удалить ' + ids.length + ' фото?')) return;
-
         var self = this;
         var deleted = 0;
-
         (function next() {
             if (!ids.length) {
                 self.exitSelectionMode();
@@ -461,7 +462,6 @@ var admin = {
                 alert('Удалено: ' + deleted);
                 return;
             }
-
             api.deletePhoto(folderId, ids.shift()).then(function() {
                 deleted++;
                 next();
@@ -472,16 +472,16 @@ var admin = {
     setFolderCover: function() {
         var img = document.getElementById('fullscreen-image');
         if (!img || !img.src || !gallery.currentFolder) return;
-       
+      
         var folderId = gallery.currentFolder.id;
-       
+      
         // Находим текущее фото в списке
         var currentPhoto = gallery.visiblePhotos[gallery.currentPhotoIndex];
         if (!currentPhoto || !currentPhoto.file_id) {
             alert('Ошибка: не найдено фото');
             return;
         }
-       
+      
         var self = this;
         // Сохраняем file_id как обложку (не URL!)
         api.updateFolder(folderId, { cover_url: currentPhoto.file_id }).then(function(result) {
@@ -509,7 +509,7 @@ var admin = {
         document.getElementById('clear-storage-modal').style.display = 'none';
     },
     // === Очистка хранилища ===
-       
+      
     confirmClearStorage: function() {
         var password = document.getElementById('clear-storage-password').value;
         var errorEl = document.getElementById('clear-storage-error');
@@ -548,16 +548,16 @@ var admin = {
     // === ПРОСМОТР ХРАНИЛИЩА ===
     viewStorage: function() {
         var token = api.getToken();
-       
+      
         if (!token) {
             alert('Ошибка: не авторизован');
             return;
         }
-       
+      
         // Создаём модальное окно
         var modal = document.getElementById('storage-viewer');
         if (modal) modal.remove();
-       
+      
         modal = document.createElement('div');
         modal.id = 'storage-viewer';
         modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:10002;overflow:auto;display:none;';
@@ -569,10 +569,10 @@ var admin = {
                     '<p>Загрузка...</p>' +
                 '</div>' +
             '</div>';
-       
+      
         document.body.appendChild(modal);
         modal.style.display = 'block';
-       
+      
         // Загружаем данные через API
         fetch(API_BASE + '/admin/storage-info', {
             headers: { 'Authorization': 'Bearer ' + token }
@@ -583,23 +583,23 @@ var admin = {
                 document.getElementById('storage-content').innerHTML = '<p style="color:red;">Ошибка: ' + (response.error || 'Unknown error') + '</p>';
                 return;
             }
-           
+          
             // Формируем HTML с данными
             var folders = response.folders || [];
             var photos = response.photos || [];
-           
+          
             var html = '';
-           
+          
             // Статистика
             html += '<h3>📊 Статистика</h3>';
             html += '<p><strong>Папок:</strong> ' + folders.length + '</p>';
             html += '<p><strong>Фото:</strong> ' + photos.length + '</p>';
-           
+          
             // Папки
             html += '<h3 style="margin-top:20px;">📁 ПАПКИ</h3>';
             html += '<table style="width:100%;border-collapse:collapse;">';
             html += '<tr style="background:#f0f0f0;"><th style="padding:8px;border:1px solid #ddd;">ID</th><th style="padding:8px;border:1px solid #ddd;">Название</th><th style="padding:8px;border:1px solid #ddd;">Скрыта</th></tr>';
-           
+          
             for (var i = 0; i < folders.length; i++) {
                 var f = folders[i];
                 html += '<tr>';
@@ -609,7 +609,7 @@ var admin = {
                 html += '</tr>';
             }
             html += '</table>';
-           
+          
             // Фото
             var activePhotos = 0;
             var deletedPhotos = 0;
@@ -617,10 +617,10 @@ var admin = {
                 if (photos[j].deleted) deletedPhotos++;
                 else activePhotos++;
             }
-           
+          
             html += '<h3 style="margin-top:20px;">📷 ФОТО</h3>';
             html += '<p>Активных: ' + activePhotos + ' | Удалённых: ' + deletedPhotos + '</p>';
-           
+          
             document.getElementById('storage-content').innerHTML = html;
         })
         .catch(function(error) {
@@ -671,21 +671,20 @@ var admin = {
         input.click();
     }
 };
-
 // При загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     if (api.isAdmin()) {
         admin.showAdminUI();
         admin.startInactivityTimer();
     }
-   
+  
     var passwordInput = document.getElementById('admin-password');
     if (passwordInput) {
         passwordInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') admin.login();
         });
     }
-   
+  
     // Сброс таймера при любой активности
     ['click', 'touchstart', 'keydown', 'scroll'].forEach(function(event) {
         document.addEventListener(event, function() {
