@@ -492,12 +492,25 @@ showLoadMoreButton: function(folderId, nextOffset, allPhotos) {
         // Если URL нет (фото удалено в Telegram), показываем заглушку
         var imgSrc = photo.url || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ccc"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%23999"%3EНет фото%3C/text%3E%3C/svg%3E';
         
-        return '<div class="photo-item ' + hiddenClass + '" onclick="gallery.openFullscreen(' + index + ')">' +
+        return '<div class="photo-item ' + hiddenClass + '" data-id="' + photo.id + '" data-index="' + index + '" onclick="gallery.handlePhotoClick(event, ' + index + ', \'' + photo.id + '\')">' +
             '<img src="' + imgSrc + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">' +
             adminActions +
         '</div>';
     },
 
+
+    // Обработчик клика по фото — либо открывает, либо выбирает (в режиме выбора)
+    handlePhotoClick: function(e, index, photoId) {
+        if (typeof admin !== 'undefined' && admin.isSelectionMode) {
+            e.stopPropagation();
+            var checkbox = e.currentTarget.querySelector('.photo-checkbox-custom');
+            if (checkbox) {
+                admin.togglePhotoSelection(photoId, checkbox);
+            }
+            return;
+        }
+        this.openFullscreen(index);
+    },
     // Открываем фото на весь экран
     openFullscreen: function(index) {
         if (index < 0 || index >= this.visiblePhotos.length) return;
