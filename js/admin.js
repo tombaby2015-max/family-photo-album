@@ -1,7 +1,8 @@
-// admin.js — админ-панель (полностью исправленная версия)
+// admin.js — админ-панель (новая версия)
+// УБРАНА загрузка фото, оставлено только управление
 var admin = {
     inactivityTimer: null,
-    inactivityTimeout: 15 * 60 * 1000,
+    inactivityTimeout: 15 * 60 * 1000, // 15 минут
     isAdminActive: false,
   
     // === СОСТОЯНИЕ ВЫБОРА ФОТО ===
@@ -45,6 +46,7 @@ var admin = {
                 self.showAdminUI();
                 self.startInactivityTimer();
                 gallery.loadFolders();
+                // Делаем бэкап при входе
                 setTimeout(function() {
                     self.createBackup('Вход в админку');
                 }, 1000);
@@ -67,7 +69,7 @@ var admin = {
         var folderAdminPanel = document.getElementById('sidebar-admin-buttons');
       
         if (adminPanel) adminPanel.style.display = 'block';
-        if (folderAdminPanel) folderAdminPanel.style.display = 'block';
+        if (folderAdminPanel) folderAdminPanel.style.display = 'flex';
       
         this.isAdminActive = true;
         gallery.loadFolders();
@@ -81,6 +83,7 @@ var admin = {
       
         this.isAdminActive = false;
     },
+    // === ТАЙМЕР БЕЗДЕЙСТВИЯ ===
     startInactivityTimer: function() {
         this.stopInactivityTimer();
         var self = this;
@@ -103,6 +106,7 @@ var admin = {
             this.startInactivityTimer();
         }
     },
+    // === БЭКАПЫ ===
     createBackup: function(reason) {
         var token = api.getToken();
         if (!token) {
@@ -139,10 +143,12 @@ var admin = {
             alert('❌ Ошибка: ' + error.message);
         });
     },
+    // === УПРАВЛЕНИЕ ПАПКАМИ ===
     initSortable: function() {
         var container = document.getElementById('folders-container');
         if (!container || !api.isAdmin()) return;
       
+        // На мобильных отключаем drag&drop
         var isMobile = window.matchMedia("(max-width: 768px)").matches;
         if (isMobile) {
             console.log('На мобильных перетаскивание отключено');
@@ -233,6 +239,8 @@ var admin = {
       
         if (!confirm('Удалить папку? Фото останутся в Telegram, но исчезнут с сайта.')) return;
       
+        // На самом деле мы не удаляем папку полностью, а просто скрываем
+        // Потому что в Telegram тема остаётся
         var self = this;
         api.updateFolder(id, { hidden: true }).then(function(result) {
             if (result) {
@@ -249,6 +257,7 @@ var admin = {
             alert('Ошибка при удалении');
         });
     },
+    // === УПРАВЛЕНИЕ ФОТО ===
     deletePhoto: function(photoId) {
         if (!confirm('Удалить фото? Оно исчезнет с сайта, но останется в Telegram.')) return;
       
@@ -294,182 +303,171 @@ var admin = {
             alert('Ошибка при удалении');
         });
     },
-
-    // === МАССОВОЕ УДАЛЕНИЕ (УПРОЩЕННАЯ ЛОГИКА) ===
-    
+    // === МАССОВОЕ УДАЛЕНИЕ ===
     enterSelectionMode: function() {
-        console.log('Enter selection mode');
         this.isSelectionMode = true;
         this.selectedPhotos = [];
        
-        var enterBtn = document.getElementById('btn-enter-selection');
+        // Скрываем кнопку "Выбрать фото", показываем панель действий
+        var selectBtn = document.querySelector('#sidebar-admin-buttons > .admin-btn');
         var toolbar = document.getElementById('selection-toolbar');
        
-        if (enterBtn) enterBtn.style.display = 'none';
-        if (toolbar) toolbar.style.display = 'flex';
+        if (selectBtn) selectBtn.style.display = 'none';
+        if (toolbar) {
+            toolbar.style.display = 'flex';
+            // Сбрасываем текст кнопки "Выбрать все"
+            var selectAllBtn = document.getElementById('btn-select-all');
+            if (selectAllBtn) selectAllBtn.textContent = 'Выбрать все';
+        }
        
-        this.renderCheckboxes();
-        this.updateSelectionUI();
+        // Добавляем чекбоксы к фото
+        this.addCheckboxesToPhotos();
+        this.updateSelectionCount();
     },
    
     exitSelectionMode: function() {
-        console.log('Exit selection mode');
         this.isSelectionMode = false;
         this.selectedPhotos = [];
        
-        var enterBtn = document.getElementById('btn-enter-selection');
+        // Показываем кнопку "Выбрать фото", скрываем панель действий
+        var selectBtn = document.querySelector('#sidebar-admin-buttons > .admin-btn');
         var toolbar = document.getElementById('selection-toolbar');
        
-        if (enterBtn) enterBtn.style.display = 'block';
+        if (selectBtn) selectBtn.style.display = 'block';
         if (toolbar) toolbar.style.display = 'none';
        
-        this.removeCheckboxes();
+        // Убираем чекбоксы
+        this.removeCheckboxesFromPhotos();
     },
    
-    renderCheckboxes: function() {
+    addCheckboxesToPhotos: function() {
         var photos = document.querySelectorAll('.photo-item');
         var self = this;
        
         for (var i = 0; i < photos.length; i++) {
             var photo = photos[i];
-            
-            var oldCheckbox = photo.querySelector('.photo-checkbox-custom');
-            if (oldCheckbox) oldCheckbox.remove();
-            
+            if (photo.querySelector('.photo-checkbox-custom')) {
+                continue;
+            }
             var photoId = photo.getAttribute('data-id');
-            if (!photoId) continue;
            
+            // Создаём чекбокс
             var checkbox = document.createElement('div');
             checkbox.className = 'photo-checkbox-custom';
             checkbox.setAttribute('data-photo-id', photoId);
-            
-            if (self.selectedPhotos.indexOf(photoId) > -1) {
-                checkbox.classList.add('checked');
-                checkbox.innerHTML = '✓';
-            }
            
+            // Обработчик клика
             checkbox.onclick = function(e) {
                 e.stopPropagation();
-                e.preventDefault();
                 var id = this.getAttribute('data-photo-id');
-                self.togglePhotoSelection(id);
+                self.togglePhotoSelection(id, this);
             };
            
             photo.appendChild(checkbox);
-            photo.style.position = 'relative';
+
+            // Устанавливаем начальное состояние
+            var shouldCheck = self.selectedPhotos.indexOf(photoId) > -1;
+            if (shouldCheck) {
+                checkbox.classList.add('checked');
+                checkbox.innerHTML = '✓';
+            }
         }
     },
    
-    removeCheckboxes: function() {
+    removeCheckboxesFromPhotos: function() {
         var checkboxes = document.querySelectorAll('.photo-checkbox-custom');
         for (var i = 0; i < checkboxes.length; i++) {
             checkboxes[i].remove();
         }
     },
    
-    updateCheckboxesVisual: function() {
+    toggleSelectAll: function() {
+        var allIds = gallery.currentPhotos.map(function(p) { return p.id; });
+        var allSelected = (this.selectedPhotos.length === allIds.length);
+
+        if (allSelected) {
+            // Снять все
+            this.selectedPhotos = [];
+        } else {
+            // Выбрать все
+            this.selectedPhotos = allIds.slice();
+        }
+
         var checkboxes = document.querySelectorAll('.photo-checkbox-custom');
         for (var i = 0; i < checkboxes.length; i++) {
-            var checkbox = checkboxes[i];
-            var photoId = checkbox.getAttribute('data-photo-id');
-            
-            if (this.selectedPhotos.indexOf(photoId) > -1) {
-                checkbox.classList.add('checked');
-                checkbox.innerHTML = '✓';
+            var id = checkboxes[i].getAttribute('data-photo-id');
+            if (this.selectedPhotos.indexOf(id) > -1) {
+                checkboxes[i].classList.add('checked');
+                checkboxes[i].innerHTML = '✓';
             } else {
-                checkbox.classList.remove('checked');
-                checkbox.innerHTML = '';
+                checkboxes[i].classList.remove('checked');
+                checkboxes[i].innerHTML = '';
             }
         }
+        this.updateSelectionCount();
     },
    
-    toggleSelectAll: function() {
-        var total = gallery.currentPhotos.length;
-        var currentCount = this.selectedPhotos.length;
-        
-        if (currentCount === total) {
-            this.selectedPhotos = [];
-        } else {
-            this.selectedPhotos = [];
-            for (var i = 0; i < gallery.currentPhotos.length; i++) {
-                this.selectedPhotos.push(gallery.currentPhotos[i].id);
-            }
-        }
-        
-        this.updateCheckboxesVisual();
-        this.updateSelectionUI();
-    },
-   
-    togglePhotoSelection: function(photoId) {
+    togglePhotoSelection: function(photoId, checkboxEl) {
         var index = this.selectedPhotos.indexOf(photoId);
-        
         if (index > -1) {
+            // Снять выделение
             this.selectedPhotos.splice(index, 1);
+            checkboxEl.classList.remove('checked');
+            checkboxEl.innerHTML = '';
         } else {
+            // Выбрать
             this.selectedPhotos.push(photoId);
+            checkboxEl.classList.add('checked');
+            checkboxEl.innerHTML = '✓';
         }
-        
-        this.updateCheckboxesVisual();
-        this.updateSelectionUI();
+        this.updateSelectionCount();
     },
    
-    updateSelectionUI: function() {
-        var count = this.selectedPhotos.length;
+    updateSelectionCount: function() {
+        var btn = document.getElementById('btn-delete-selected');
         var total = gallery.currentPhotos.length;
-        
-        var deleteBtn = document.getElementById('btn-delete-selected');
-        if (deleteBtn) {
-            deleteBtn.textContent = 'Удалить выбранные (' + count + ')';
-            deleteBtn.disabled = count === 0;
-            deleteBtn.style.opacity = count === 0 ? '0.5' : '1';
+        var count = this.selectedPhotos.length;
+        if (btn) {
+            btn.textContent = 'Удалить выбранные (' + count + ')';
+            btn.disabled = count === 0;
+            btn.style.opacity = count === 0 ? '0.5' : '1';
         }
-        
         var selectAllBtn = document.getElementById('btn-select-all');
         if (selectAllBtn) {
-            if (count === total && total > 0) {
-                selectAllBtn.textContent = 'Снять все выделения';
-            } else {
-                selectAllBtn.textContent = 'Выбрать все';
-            }
+            selectAllBtn.textContent = (count === total && total > 0) ? 'Снять все выделения' : 'Выбрать все';
         }
     },
    
     deleteSelectedPhotos: function() {
         var folderId = gallery.currentFolder ? gallery.currentFolder.id : null;
-        if (!folderId || this.selectedPhotos.length === 0) return;
+        if (!folderId) return;
        
-        if (!confirm('Удалить ' + this.selectedPhotos.length + ' фото?')) return;
-        
-        var self = this;
         var ids = this.selectedPhotos.slice();
+        if (!ids.length) return;
+        if (!confirm('Удалить ' + ids.length + ' фото?')) return;
+        var self = this;
         var deleted = 0;
-        
-        function deleteNext() {
-            if (ids.length === 0) {
+        (function next() {
+            if (!ids.length) {
                 self.exitSelectionMode();
                 gallery.loadPhotos(folderId);
                 alert('Удалено: ' + deleted);
                 return;
             }
-            
-            var photoId = ids.shift();
-            api.deletePhoto(folderId, photoId).then(function() {
+            api.deletePhoto(folderId, ids.shift()).then(function() {
                 deleted++;
-                deleteNext();
-            }).catch(function() {
-                deleteNext();
-            });
-        }
-        
-        deleteNext();
+                next();
+            }).catch(next);
+        })();
     },
-
+    // === ОБЛОЖКИ ПАПОК ===
     setFolderCover: function() {
         var img = document.getElementById('fullscreen-image');
         if (!img || !img.src || !gallery.currentFolder) return;
       
         var folderId = gallery.currentFolder.id;
       
+        // Находим текущее фото в списке
         var currentPhoto = gallery.visiblePhotos[gallery.currentPhotoIndex];
         if (!currentPhoto || !currentPhoto.file_id) {
             alert('Ошибка: не найдено фото');
@@ -477,6 +475,7 @@ var admin = {
         }
       
         var self = this;
+        // Сохраняем file_id как обложку (не URL!)
         api.updateFolder(folderId, { cover_url: currentPhoto.file_id }).then(function(result) {
             if (result) {
                 gallery.currentFolder.cover_url = currentPhoto.file_id;
@@ -491,7 +490,7 @@ var admin = {
             alert('Ошибка установки обложки');
         });
     },
-    
+    // === ОЧИСТКА ХРАНИЛИЩА (опасно!) ===
     openClearStorageModal: function() {
         document.getElementById('clear-storage-modal').style.display = 'flex';
         document.getElementById('clear-storage-password').value = '';
@@ -501,6 +500,7 @@ var admin = {
     closeClearStorageModal: function() {
         document.getElementById('clear-storage-modal').style.display = 'none';
     },
+    // === Очистка хранилища ===
       
     confirmClearStorage: function() {
         var password = document.getElementById('clear-storage-password').value;
@@ -533,11 +533,11 @@ var admin = {
             });
         });
     },
-    
+    // === ОБНОВЛЕНИЕ СТРАНИЦЫ ===
     reloadPage: function() {
         location.reload(true);
     },
-    
+    // === ПРОСМОТР ХРАНИЛИЩА ===
     viewStorage: function() {
         var token = api.getToken();
       
@@ -546,6 +546,7 @@ var admin = {
             return;
         }
       
+        // Создаём модальное окно
         var modal = document.getElementById('storage-viewer');
         if (modal) modal.remove();
       
@@ -564,6 +565,7 @@ var admin = {
         document.body.appendChild(modal);
         modal.style.display = 'block';
       
+        // Загружаем данные через API
         fetch(API_BASE + '/admin/storage-info', {
             headers: { 'Authorization': 'Bearer ' + token }
         })
@@ -574,15 +576,18 @@ var admin = {
                 return;
             }
           
+            // Формируем HTML с данными
             var folders = response.folders || [];
             var photos = response.photos || [];
           
             var html = '';
           
+            // Статистика
             html += '<h3>📊 Статистика</h3>';
             html += '<p><strong>Папок:</strong> ' + folders.length + '</p>';
             html += '<p><strong>Фото:</strong> ' + photos.length + '</p>';
           
+            // Папки
             html += '<h3 style="margin-top:20px;">📁 ПАПКИ</h3>';
             html += '<table style="width:100%;border-collapse:collapse;">';
             html += '<tr style="background:#f0f0f0;"><th style="padding:8px;border:1px solid #ddd;">ID</th><th style="padding:8px;border:1px solid #ddd;">Название</th><th style="padding:8px;border:1px solid #ddd;">Скрыта</th></tr>';
@@ -597,6 +602,7 @@ var admin = {
             }
             html += '</table>';
           
+            // Фото
             var activePhotos = 0;
             var deletedPhotos = 0;
             for (var j = 0; j < photos.length; j++) {
@@ -613,7 +619,7 @@ var admin = {
             document.getElementById('storage-content').innerHTML = '<p style="color:red;">Ошибка загрузки: ' + error.message + '</p>';
         });
     },
-    
+    // === ВОССТАНОВЛЕНИЕ ИЗ БЭКАПА ===
     restoreFromBackup: function() {
         var input = document.getElementById('restore-backup-file');
         if (!input) {
@@ -657,7 +663,7 @@ var admin = {
         input.click();
     }
 };
-
+// При загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     if (api.isAdmin()) {
         admin.showAdminUI();
@@ -671,6 +677,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
   
+    // Сброс таймера при любой активности
     ['click', 'touchstart', 'keydown', 'scroll'].forEach(function(event) {
         document.addEventListener(event, function() {
             if (admin.isAdminActive) {
