@@ -259,7 +259,7 @@
 }
 .preview-editor__btn.zoom-out {
     bottom: 8px;
-    left: calc(50% - 68px);
+    left: calc(50% - 88px);
     font-size: 16px;
 }
 .preview-editor__btn.zoom-in {
