@@ -442,14 +442,23 @@ var admin = {
     },
    
     updateSelectionCount: function() {
-        var btn = document.getElementById('btn-delete-selected');
-        var total = gallery.currentPhotos.length;
         var count = this.selectedPhotos.length;
-        if (btn) {
-            btn.textContent = 'Удалить выбранные (' + count + ')';
-            btn.disabled = count === 0;
-            btn.style.opacity = count === 0 ? '0.5' : '1';
+        var total = gallery.currentPhotos.length;
+
+        var deleteBtn = document.getElementById('btn-delete-selected');
+        if (deleteBtn) {
+            deleteBtn.textContent = 'Удалить выбранные (' + count + ')';
+            deleteBtn.disabled = count === 0;
+            deleteBtn.style.opacity = count === 0 ? '0.5' : '1';
         }
+
+        var hideBtn = document.getElementById('btn-hide-selected');
+        if (hideBtn) {
+            hideBtn.textContent = 'Скрыть выбранные (' + count + ')';
+            hideBtn.disabled = count === 0;
+            hideBtn.style.opacity = count === 0 ? '0.5' : '1';
+        }
+
         var selectAllBtn = document.getElementById('btn-select-all');
         if (selectAllBtn) {
             selectAllBtn.textContent = (count === total && total > 0) ? 'Снять все выделения' : 'Выбрать все';
@@ -478,6 +487,36 @@ var admin = {
             }).catch(next);
         })();
     },
+    // === МАССОВОЕ СКРЫТИЕ ===
+    hideSelectedPhotos: function(hidden) {
+        var folderId = gallery.currentFolder ? gallery.currentFolder.id : null;
+        if (!folderId) return;
+
+        var ids = this.selectedPhotos.slice();
+        if (!ids.length) return;
+
+        var action = hidden ? 'скрыть' : 'показать';
+        var actionDone = hidden ? 'Скрыто' : 'Показано';
+        if (!confirm((hidden ? 'Скрыть ' : 'Показать ') + ids.length + ' фото?')) return;
+
+        var self = this;
+        var done = 0;
+        var total = ids.length;
+
+        (function next() {
+            if (!ids.length) {
+                self.exitSelectionMode();
+                gallery.loadPhotos(folderId);
+                alert(actionDone + ': ' + done);
+                return;
+            }
+            api.updatePhoto(folderId, ids.shift(), { hidden: hidden }).then(function() {
+                done++;
+                next();
+            }).catch(next);
+        })();
+    },
+
     // === ОБЛОЖКИ ПАПОК ===
     setFolderCover: function() {
         var img = document.getElementById('fullscreen-image');
