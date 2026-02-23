@@ -296,7 +296,7 @@ var admin = {
         });
     },
 
-    // === МАССОВОЕ УДАЛЕНИЕ (УПРОЩЕННАЯ ЛОГИКА) ===
+        // === МАССОВОЕ УДАЛЕНИЕ (УПРОЩЕННАЯ ЛОГИКА) ===
     
     // Вход в режим выбора
     enterSelectionMode: function() {
@@ -304,11 +304,11 @@ var admin = {
         this.isSelectionMode = true;
         this.selectedPhotos = [];
        
-        // Скрываем кнопку "Выбрать фото", показываем панель действий
-        var selectBtn = document.getElementById('btn-enter-selection'); // Точный ID
+        // Показываем панель инструментов, скрываем кнопку входа
+        var enterBtn = document.getElementById('btn-enter-selection');
         var toolbar = document.getElementById('selection-toolbar');
        
-        if (selectBtn) selectBtn.style.display = 'none';
+        if (enterBtn) enterBtn.style.display = 'none';
         if (toolbar) toolbar.style.display = 'flex';
        
         // Добавляем чекбоксы к фото
@@ -322,16 +322,18 @@ var admin = {
         this.isSelectionMode = false;
         this.selectedPhotos = [];
        
-        // Показываем кнопку "Выбрать фото", скрываем панель действий
-        var selectBtn = document.getElementById('btn-enter-selection');
+        // Показываем кнопку входа, скрываем панель инструментов
+        var enterBtn = document.getElementById('btn-enter-selection');
         var toolbar = document.getElementById('selection-toolbar');
        
-        if (selectBtn) selectBtn.style.display = 'block';
+        if (enterBtn) enterBtn.style.display = 'block';
         if (toolbar) toolbar.style.display = 'none';
        
         // Убираем чекбоксы
         this.removeCheckboxes();
     },
+
+    // ... (остальные методы без изменений из предыдущего ответа) ...
    
     // Отрисовка чекбоксов на всех фото
     renderCheckboxes: function() {
