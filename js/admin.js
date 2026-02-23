@@ -1,5 +1,4 @@
-// admin.js — админ-панель (полностью исправленная версия выбора фото)
-
+// admin.js — админ-панель (полностью исправленная версия)
 var admin = {
     inactivityTimer: null,
     inactivityTimeout: 15 * 60 * 1000,
@@ -7,7 +6,7 @@ var admin = {
   
     // === СОСТОЯНИЕ ВЫБОРА ФОТО ===
     isSelectionMode: false,
-    selectedPhotos: [], // Просто массив ID выбранных фото
+    selectedPhotos: [],
   
     // === ВХОД И ВЫХОД ===
     openModal: function() {
@@ -68,7 +67,7 @@ var admin = {
         var folderAdminPanel = document.getElementById('sidebar-admin-buttons');
       
         if (adminPanel) adminPanel.style.display = 'block';
-        if (folderAdminPanel) folderAdminPanel.style.display = 'flex';
+        if (folderAdminPanel) folderAdminPanel.style.display = 'block';
       
         this.isAdminActive = true;
         gallery.loadFolders();
@@ -296,46 +295,37 @@ var admin = {
         });
     },
 
-        // === МАССОВОЕ УДАЛЕНИЕ (УПРОЩЕННАЯ ЛОГИКА) ===
+    // === МАССОВОЕ УДАЛЕНИЕ (УПРОЩЕННАЯ ЛОГИКА) ===
     
-    // Вход в режим выбора
     enterSelectionMode: function() {
         console.log('Enter selection mode');
         this.isSelectionMode = true;
         this.selectedPhotos = [];
        
-        // Показываем панель инструментов, скрываем кнопку входа
         var enterBtn = document.getElementById('btn-enter-selection');
         var toolbar = document.getElementById('selection-toolbar');
        
         if (enterBtn) enterBtn.style.display = 'none';
         if (toolbar) toolbar.style.display = 'flex';
        
-        // Добавляем чекбоксы к фото
         this.renderCheckboxes();
         this.updateSelectionUI();
     },
    
-    // Выход из режима выбора
     exitSelectionMode: function() {
         console.log('Exit selection mode');
         this.isSelectionMode = false;
         this.selectedPhotos = [];
        
-        // Показываем кнопку входа, скрываем панель инструментов
         var enterBtn = document.getElementById('btn-enter-selection');
         var toolbar = document.getElementById('selection-toolbar');
        
         if (enterBtn) enterBtn.style.display = 'block';
         if (toolbar) toolbar.style.display = 'none';
        
-        // Убираем чекбоксы
         this.removeCheckboxes();
     },
-
-    // ... (остальные методы без изменений из предыдущего ответа) ...
    
-    // Отрисовка чекбоксов на всех фото
     renderCheckboxes: function() {
         var photos = document.querySelectorAll('.photo-item');
         var self = this;
@@ -343,25 +333,21 @@ var admin = {
         for (var i = 0; i < photos.length; i++) {
             var photo = photos[i];
             
-            // Удаляем старый чекбокс если есть
             var oldCheckbox = photo.querySelector('.photo-checkbox-custom');
             if (oldCheckbox) oldCheckbox.remove();
             
             var photoId = photo.getAttribute('data-id');
             if (!photoId) continue;
            
-            // Создаём чекбокс
             var checkbox = document.createElement('div');
             checkbox.className = 'photo-checkbox-custom';
             checkbox.setAttribute('data-photo-id', photoId);
             
-            // Проверяем, выбрано ли это фото
             if (self.selectedPhotos.indexOf(photoId) > -1) {
                 checkbox.classList.add('checked');
                 checkbox.innerHTML = '✓';
             }
            
-            // Обработчик клика
             checkbox.onclick = function(e) {
                 e.stopPropagation();
                 e.preventDefault();
@@ -370,11 +356,10 @@ var admin = {
             };
            
             photo.appendChild(checkbox);
-            photo.style.position = 'relative'; // Важно для позиционирования чекбокса
+            photo.style.position = 'relative';
         }
     },
    
-    // Удаление всех чекбоксов
     removeCheckboxes: function() {
         var checkboxes = document.querySelectorAll('.photo-checkbox-custom');
         for (var i = 0; i < checkboxes.length; i++) {
@@ -382,7 +367,6 @@ var admin = {
         }
     },
    
-    // Обновление визуального состояния чекбоксов
     updateCheckboxesVisual: function() {
         var checkboxes = document.querySelectorAll('.photo-checkbox-custom');
         for (var i = 0; i < checkboxes.length; i++) {
@@ -399,16 +383,13 @@ var admin = {
         }
     },
    
-    // Выбрать все / Снять все
     toggleSelectAll: function() {
         var total = gallery.currentPhotos.length;
         var currentCount = this.selectedPhotos.length;
         
         if (currentCount === total) {
-            // Все выбраны — снимаем все
             this.selectedPhotos = [];
         } else {
-            // Выбираем все
             this.selectedPhotos = [];
             for (var i = 0; i < gallery.currentPhotos.length; i++) {
                 this.selectedPhotos.push(gallery.currentPhotos[i].id);
@@ -419,15 +400,12 @@ var admin = {
         this.updateSelectionUI();
     },
    
-    // Переключение выбора одного фото
     togglePhotoSelection: function(photoId) {
         var index = this.selectedPhotos.indexOf(photoId);
         
         if (index > -1) {
-            // Уже выбрано — убираем
             this.selectedPhotos.splice(index, 1);
         } else {
-            // Не выбрано — добавляем
             this.selectedPhotos.push(photoId);
         }
         
@@ -435,12 +413,10 @@ var admin = {
         this.updateSelectionUI();
     },
    
-    // Обновление UI (кнопки и счетчик)
     updateSelectionUI: function() {
         var count = this.selectedPhotos.length;
         var total = gallery.currentPhotos.length;
         
-        // Кнопка удаления
         var deleteBtn = document.getElementById('btn-delete-selected');
         if (deleteBtn) {
             deleteBtn.textContent = 'Удалить выбранные (' + count + ')';
@@ -448,7 +424,6 @@ var admin = {
             deleteBtn.style.opacity = count === 0 ? '0.5' : '1';
         }
         
-        // Кнопка "Выбрать все / Снять все"
         var selectAllBtn = document.getElementById('btn-select-all');
         if (selectAllBtn) {
             if (count === total && total > 0) {
@@ -459,7 +434,6 @@ var admin = {
         }
     },
    
-    // Удаление выбранных фото
     deleteSelectedPhotos: function() {
         var folderId = gallery.currentFolder ? gallery.currentFolder.id : null;
         if (!folderId || this.selectedPhotos.length === 0) return;
@@ -467,7 +441,7 @@ var admin = {
         if (!confirm('Удалить ' + this.selectedPhotos.length + ' фото?')) return;
         
         var self = this;
-        var ids = this.selectedPhotos.slice(); // Копия массива
+        var ids = this.selectedPhotos.slice();
         var deleted = 0;
         
         function deleteNext() {
@@ -490,7 +464,6 @@ var admin = {
         deleteNext();
     },
 
-    // === ОБЛОЖКИ ПАПОК ===
     setFolderCover: function() {
         var img = document.getElementById('fullscreen-image');
         if (!img || !img.src || !gallery.currentFolder) return;
@@ -519,7 +492,6 @@ var admin = {
         });
     },
     
-    // === ОЧИСТКА ХРАНИЛИЩА ===
     openClearStorageModal: function() {
         document.getElementById('clear-storage-modal').style.display = 'flex';
         document.getElementById('clear-storage-password').value = '';
@@ -686,7 +658,6 @@ var admin = {
     }
 };
 
-// При загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     if (api.isAdmin()) {
         admin.showAdminUI();
@@ -700,7 +671,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
   
-    // Сброс таймера при любой активности
     ['click', 'touchstart', 'keydown', 'scroll'].forEach(function(event) {
         document.addEventListener(event, function() {
             if (admin.isAdminActive) {
@@ -708,48 +678,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
-    // Привязка обработчиков кнопок выбора фото (на случай если они уже в DOM)
-    admin.bindSelectionButtons();
 });
-
-// Отдельный метод для привязки обработчиков (можно вызывать после загрузки фото)
-admin.bindSelectionButtons = function() {
-    // Кнопка "Выбрать фото" (вход в режим)
-    var enterBtn = document.getElementById('btn-enter-selection');
-    if (enterBtn) {
-        enterBtn.onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            admin.enterSelectionMode();
-            return false;
-        };
-    }
-    
-    // Кнопка "Отмена" (выход из режима)
-    var cancelBtn = document.getElementById('btn-cancel-selection');
-    if (cancelBtn) {
-        cancelBtn.onclick = function(e) {
-            e.preventDefault();
-            admin.exitSelectionMode();
-        };
-    }
-    
-    // Кнопка "Выбрать все / Снять все"
-    var selectAllBtn = document.getElementById('btn-select-all');
-    if (selectAllBtn) {
-        selectAllBtn.onclick = function(e) {
-            e.preventDefault();
-            admin.toggleSelectAll();
-        };
-    }
-    
-    // Кнопка "Удалить выбранные"
-    var deleteBtn = document.getElementById('btn-delete-selected');
-    if (deleteBtn) {
-        deleteBtn.onclick = function(e) {
-            e.preventDefault();
-            admin.deleteSelectedPhotos();
-        };
-    }
-};
