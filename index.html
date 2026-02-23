@@ -127,13 +127,27 @@
                     <span class="back-arrow">←</span>Назад к папкам
                 </a>
                 
-                <div class="sidebar-admin-buttons" id="sidebar-admin-buttons" style="display:none;">
-                    <button class="admin-btn" onclick="admin.enterSelectionMode()">☐ Выбрать фото</button>
-                    <div id="selection-toolbar" style="display:none; flex-direction:column; gap:8px; margin-top:10px;">
-                        <button class="admin-btn" id="btn-select-all" onclick="admin.toggleSelectAll()">Выбрать все</button>
-                        <button class="admin-btn danger" id="btn-delete-selected" onclick="admin.deleteSelectedPhotos()" disabled>Удалить выбранные (0)</button>
-                        <button class="admin-btn" onclick="admin.exitSelectionMode()">✕ Отмена</button>
+                <!-- КОНТЕЙНЕР ДЛЯ АДМИН-КНОПОК В ПАПКЕ -->
+                <div class="sidebar-admin-buttons" id="sidebar-admin-buttons" style="display:none; margin-top: 20px;">
+                    
+                    <!-- Кнопка входа в режим выбора (показывается когда не в режиме выбора) -->
+                    <button class="admin-btn" id="btn-enter-selection" onclick="admin.enterSelectionMode()" style="width: 100%; margin-bottom: 10px;">
+                        ☐ Выбрать фото
+                    </button>
+                    
+                    <!-- Панель инструментов выбора (показывается только в режиме выбора) -->
+                    <div id="selection-toolbar" style="display: none; flex-direction: column; gap: 8px;">
+                        <button class="admin-btn" id="btn-select-all" onclick="admin.toggleSelectAll()" style="width: 100%;">
+                            Выбрать все
+                        </button>
+                        <button class="admin-btn danger" id="btn-delete-selected" onclick="admin.deleteSelectedPhotos()" disabled style="width: 100%; opacity: 0.5;">
+                            Удалить выбранные (0)
+                        </button>
+                        <button class="admin-btn" onclick="admin.exitSelectionMode()" style="width: 100%;">
+                            ✕ Отмена
+                        </button>
                     </div>
+                    
                 </div>
             </div>
             
