@@ -303,6 +303,24 @@ var admin = {
             alert('Ошибка при удалении');
         });
     },
+    // === СКРЫТИЕ/ПОКАЗ ФОТО ===
+    togglePhotoHidden: function(photoId, hidden) {
+        var folderId = gallery.currentFolder ? gallery.currentFolder.id : null;
+        if (!folderId) return;
+
+        var self = this;
+        api.updatePhoto(folderId, photoId, { hidden: hidden }).then(function(result) {
+            if (result && result.success) {
+                self.createBackup((hidden ? 'Скрытие' : 'Показ') + ' фото');
+                gallery.loadPhotos(folderId);
+            } else {
+                alert('Ошибка при ' + (hidden ? 'скрытии' : 'показе') + ' фото');
+            }
+        }).catch(function() {
+            alert('Ошибка соединения');
+        });
+    },
+
     // === МАССОВОЕ УДАЛЕНИЕ ===
     enterSelectionMode: function() {
         this.isSelectionMode = true;
