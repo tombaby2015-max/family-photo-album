@@ -122,6 +122,20 @@ var api = {
         .catch(function() { return {}; });
     },
 
+    // Скрыть/показать фото
+    updatePhoto: function(folderId, photoId, updates) {
+        var body = { id: photoId, folder_id: folderId };
+        for (var key in updates) {
+            body[key] = updates[key];
+        }
+        return fetch(API_BASE + '/photos', {
+            method: 'PATCH',
+            headers: this.getHeaders(true),
+            body: JSON.stringify(body)
+        }).then(function(response) { return response.json(); })
+          .catch(function() { return null; });
+    },
+
     // Удалить фото (мягкое удаление — помечаем deleted: true)
     deletePhoto: function(folderId, photoId) {
         return fetch(API_BASE + '/photos?id=' + photoId + '&folder_id=' + folderId, {
