@@ -1,618 +1,706 @@
-// gallery.js — показывает папки и фото (новая версия)
-// Работает с Telegram ID и новой структурой KV
-
-var gallery = {
-    folders: [],
-    currentPhotos: [],
-    visiblePhotos: [],
-    currentFolder: null,
-    currentPhotoIndex: 0,
-    editingFolder: null,
-    previewState: { x: 50, y: 50, scale: 100 },
-    keyHandler: null,
-    lastOpenedFolderId: null,
-
-    init: function() {
-        var self = this;
-        var hash = window.location.hash;
-        if (hash && hash.indexOf('folder=') !== -1) {
-            var folderId = hash.split('folder=')[1];
-            self.loadFoldersAndOpen(folderId);
-        } else {
-            this.loadFolders();
+// admin.js — админ-панель (новая версия)
+// УБРАНА загрузка фото, оставлено только управление
+var admin = {
+    inactivityTimer: null,
+    inactivityTimeout: 15 * 60 * 1000, // 15 минут
+    isAdminActive: false,
+  
+    // === СОСТОЯНИЕ ВЫБОРА ФОТО ===
+    isSelectionMode: false,
+    selectedPhotos: [],
+  
+    // === ВХОД И ВЫХОД ===
+    openModal: function() {
+        var modal = document.getElementById('admin-modal');
+        var passwordInput = document.getElementById('admin-password');
+        var errorEl = document.getElementById('admin-error');
+      
+        if (modal) {
+            modal.style.display = 'flex';
+            if (passwordInput) passwordInput.value = '';
+            if (errorEl) errorEl.textContent = '';
+            if (passwordInput) passwordInput.focus();
         }
     },
-
-    // Загружаем папки и пытаемся открыть нужную
-    loadFoldersAndOpen: function(folderId) {
+    closeModal: function() {
+        var modal = document.getElementById('admin-modal');
+        if (modal) modal.style.display = 'none';
+    },
+    login: function() {
+        var passwordInput = document.getElementById('admin-password');
+        var errorEl = document.getElementById('admin-error');
+      
+        if (!passwordInput) return;
+      
+        var password = passwordInput.value;
+      
+        if (!password) {
+            if (errorEl) errorEl.textContent = 'Введите пароль';
+            return;
+        }
+      
         var self = this;
-        api.getFolders().then(function(folders) {
-            self.folders = folders;
-            self.renderFolders();
-            
-            // Ищем папку с нужным ID
-            var folder = null;
-            for (var i = 0; i < folders.length; i++) {
-                if (folders[i].id === folderId) {
-                    folder = folders[i];
-                    break;
-                }
-            }
-            
-            if (folder) {
-                self.openFolder(folder, false);
+        api.login(password).then(function(result) {
+            if (result.success) {
+                self.closeModal();
+                self.showAdminUI();
+                self.startInactivityTimer();
+                gallery.loadFolders();
+                // Делаем бэкап при входе
+                setTimeout(function() {
+                    self.createBackup('Вход в админку');
+                }, 1000);
             } else {
-                self.showMainPage();
+                if (errorEl) errorEl.textContent = result.error || 'Ошибка входа';
             }
+        }).catch(function(e) {
+            if (errorEl) errorEl.textContent = 'Ошибка соединения';
         });
     },
-
-    // Загружаем все папки
-    loadFolders: function() {
+    logout: function() {
+        this.createBackup('Выход из админки');
+        api.logout();
+        this.hideAdminUI();
+        this.stopInactivityTimer();
+        location.reload();
+    },
+    showAdminUI: function() {
+        var adminPanel = document.getElementById('admin-panel');
+        var folderAdminPanel = document.getElementById('sidebar-admin-buttons');
+      
+        if (adminPanel) adminPanel.style.display = 'block';
+        if (folderAdminPanel) folderAdminPanel.style.display = 'flex';
+      
+        this.isAdminActive = true;
+        gallery.loadFolders();
+    },
+    hideAdminUI: function() {
+        var adminPanel = document.getElementById('admin-panel');
+        var folderAdminPanel = document.getElementById('sidebar-admin-buttons');
+      
+        if (adminPanel) adminPanel.style.display = 'none';
+        if (folderAdminPanel) folderAdminPanel.style.display = 'none';
+      
+        this.isAdminActive = false;
+    },
+    // === ТАЙМЕР БЕЗДЕЙСТВИЯ ===
+    startInactivityTimer: function() {
+        this.stopInactivityTimer();
         var self = this;
-        var container = document.getElementById('folders-container');
-        if (container) container.innerHTML = '<li class="loading">Загрузка папок...</li>';
-        
-        api.getFolders().then(function(folders) {
-            self.folders = folders;
-            self.renderFolders();
+        this.inactivityTimer = setTimeout(function() {
+            alert('Вы автоматически вышли из админки из-за бездействия');
+            self.createBackup('Автовыход из-за бездействия');
+            api.logout();
+            self.hideAdminUI();
+            location.reload();
+        }, this.inactivityTimeout);
+    },
+    stopInactivityTimer: function() {
+        if (this.inactivityTimer) {
+            clearTimeout(this.inactivityTimer);
+            this.inactivityTimer = null;
+        }
+    },
+    resetInactivityTimer: function() {
+        if (this.isAdminActive) {
+            this.startInactivityTimer();
+        }
+    },
+    // === БЭКАПЫ ===
+    createBackup: function(reason) {
+        var token = api.getToken();
+        if (!token) {
+            console.error('Нет токена для бэкапа');
+            return;
+        }
+      
+        api.createBackup().then(function(result) {
+            if (result.success) {
+                console.log('✅ Бэкап создан:', reason);
+            } else {
+                console.error('❌ Ошибка бэкапа:', result.error);
+            }
+        }).catch(function(error) {
+            console.error('❌ Ошибка бэкапа:', error);
         });
     },
-
-    // Показываем папки на странице
-    renderFolders: function() {
+    manualBackup: function() {
         var self = this;
+        var token = api.getToken();
+      
+        if (!token) {
+            alert('Ошибка: не авторизован');
+            return;
+        }
+      
+        api.createBackup().then(function(result) {
+            if (result.success) {
+                alert('✅ Бэкап создан и отправлен в Telegram!');
+            } else {
+                alert('❌ Ошибка: ' + (result.error || 'Неизвестная ошибка'));
+            }
+        }).catch(function(error) {
+            alert('❌ Ошибка: ' + error.message);
+        });
+    },
+    // === УПРАВЛЕНИЕ ПАПКАМИ ===
+    initSortable: function() {
         var container = document.getElementById('folders-container');
-        if (!container) return;
-        
-        if (self.folders.length === 0) {
-            container.innerHTML = '<li class="empty-state"><h4>Папок пока нет</h4><p>Создайте тему в Telegram</p></li>';
+        if (!container || !api.isAdmin()) return;
+      
+        // На мобильных отключаем drag&drop
+        var isMobile = window.matchMedia("(max-width: 768px)").matches;
+        if (isMobile) {
+            console.log('На мобильных перетаскивание отключено');
             return;
         }
-        
-        var html = '';
-        for (var i = 0; i < self.folders.length; i++) {
-            html += self.createFolderCard(self.folders[i]);
-        }
-        
-        container.innerHTML = html;
-        
-        // Добавляем обработчики кликов
-        for (var j = 0; j < self.folders.length; j++) {
-            (function(folder) {
-                var card = document.getElementById('folder-' + folder.id);
-                if (card) {
-                    card.onclick = function(e) {
-                        if (self.editingFolder) return;
-                        if (e.target.closest('.folder-card__admin-actions')) return;
-                        if (e.target.closest('.preview-editor')) return;
-                        self.openFolder(folder);
-                    };
-                }
-            })(self.folders[j]);
-        }
-        
-        // Подключаем сортировку drag&drop для админа
-        if (api.isAdmin() && typeof Sortable !== 'undefined') {
-            setTimeout(function() {
-                if (typeof admin !== 'undefined') {
-                    admin.initSortable();
-                }
-            }, 100);
-        }
-    },
-
-    // Создаём HTML для карточки папки
-    createFolderCard: function(folder) {
-        var isAdmin = api.isAdmin();
-        var isEditing = this.editingFolder === folder.id;
-        var hiddenClass = folder.hidden ? 'hidden-folder' : '';
-        
-        var bgStyle = this.getFolderBackgroundStyle(folder);
-        
-        // Кнопки админа (только для админов)
-        var adminActions = '';
-        if (isAdmin && !isEditing) {
-            adminActions = '<div class="folder-card__admin-actions">' +
-                '<button onclick="event.stopPropagation(); admin.toggleFolderHidden(\'' + folder.id + '\', ' + !folder.hidden + ')" title="' + (folder.hidden ? 'Показать' : 'Скрыть') + '">' + (folder.hidden ? '👁' : '🙈') + '</button>' +
-                '<button onclick="event.stopPropagation(); admin.renameFolder(\'' + folder.id + '\', \'' + folder.title + '\')" title="Переименовать">✏️</button>' +
-                '<button onclick="event.stopPropagation(); admin.deleteFolder(\'' + folder.id + '\')" title="Удалить">🗑️</button>' +
-                '<button onclick="event.stopPropagation(); gallery.startEditPreview(\'' + folder.id + '\')" title="Редактировать превью">🖼️</button>' +
-            '</div>';
-        }
-        
-        // Редактор положения обложки
-        var previewEditor = '';
-        if (isEditing) {
-            previewEditor = '<div class="preview-editor">' +
-                '<button class="preview-editor__btn up" onclick="gallery.movePreview(0, -10)" title="Вверх">↑</button>' +
-                '<button class="preview-editor__btn down" onclick="gallery.movePreview(0, 10)" title="Вниз">↓</button>' +
-                '<button class="preview-editor__btn left" onclick="gallery.movePreview(-10, 0)" title="Влево">←</button>' +
-                '<button class="preview-editor__btn right" onclick="gallery.movePreview(10, 0)" title="Вправо">→</button>' +
-                '<button class="preview-editor__btn zoom-out" onclick="gallery.zoomPreview(-10)" title="Уменьшить">−</button>' +
-                '<button class="preview-editor__btn zoom-in" onclick="gallery.zoomPreview(10)" title="Увеличить">+</button>' +
-                '<button class="preview-editor__btn save" onclick="gallery.savePreview()" title="Сохранить">Сохранить</button>' +
-            '</div>';
-        }
-        
-        return '<li id="folder-' + folder.id + '" class="t214__col t-item t-card__col t-col t-col_4 folder-card ' + hiddenClass + (isEditing ? ' editing' : '') + '" data-folder-id="' + folder.id + '">' +
-            '<div class="folder-card__image" id="folder-image-' + folder.id + '" style="' + bgStyle + '">' +
-                '<div class="folder-card__title">' + folder.title + '</div>' +
-                adminActions +
-                previewEditor +
-            '</div>' +
-        '</li>';
-    },
-
-   // В gallery.js замените функцию getFolderBackgroundStyle
-
-getFolderBackgroundStyle: function(folder) {
-    // Если есть cover_url (это file_id), нужно получить URL
-    // Пока используем заглушку, URL получим отдельно
-    var imageUrl = 'https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg';
-    
-    // Если у папки есть обложка, попробуем использовать кэш или получить URL
-    if (folder.cover_url && folder.cover_url.startsWith('http')) {
-        // Это уже URL (старая система)
-        imageUrl = folder.cover_url;
-    } else if (folder.cover_url) {
-        // Это file_id, нужно получить URL
-        // Пока показываем заглушку, в фоне получим URL
-        this.loadCoverUrl(folder.id, folder.cover_url);
-    }
-    
-    if (this.editingFolder === folder.id) {
-        var x = this.previewState.x;
-        var y = this.previewState.y;
-        var scale = this.previewState.scale;
-        return 'background-image: url(\'' + imageUrl + '\'); background-position: ' + x + '% ' + y + '%; background-size: ' + scale + '%;';
-    }
-    
-    var x = folder.cover_x !== undefined ? folder.cover_x : 50;
-    var y = folder.cover_y !== undefined ? folder.cover_y : 50;
-    var scale = folder.cover_scale !== undefined ? folder.cover_scale : 100;
-    
-    return 'background-image: url(\'' + imageUrl + '\'); background-position: ' + x + '% ' + y + '%; background-size: ' + scale + '%;';
-},
-
-// Добавьте новую функцию для загрузки URL обложки
-loadCoverUrl: function(folderId, fileId) {
-    var self = this;
-    // Запрашиваем URL у бэкенда
-    fetch(API_BASE + '/photos/urls', {
-        method: 'POST',
-        headers: api.getHeaders(api.isAdmin()),
-        body: JSON.stringify({ 
-            folder_id: 'covers', // специальный маркер
-            photos: [{ id: 'cover', file_id: fileId }]
-        })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.urls && data.urls.cover) {
-            // Обновляем обложку в DOM
-            var imgEl = document.getElementById('folder-image-' + folderId);
-            if (imgEl) {
-                imgEl.style.backgroundImage = 'url(\'' + data.urls.cover + '\')';
-            }
-        }
-    })
-    .catch(function(e) {
-        console.error('Ошибка загрузки обложки:', e);
-    });
-},
-
-    // Редактирование превью папки
-    startEditPreview: function(folderId) {
-        var folder = null;
-        for (var i = 0; i < this.folders.length; i++) {
-            if (this.folders[i].id === folderId) {
-                folder = this.folders[i];
-                break;
-            }
-        }
-        if (!folder) return;
-        
-        if (!folder.cover_url) {
-            alert('Сначала выберите фото для превью папки (зайдите в папку и нажмите "Превью папки" на фото)');
-            return;
-        }
-        
-        this.editingFolder = folderId;
-        this.previewState = {
-            x: folder.cover_x !== undefined ? folder.cover_x : 50,
-            y: folder.cover_y !== undefined ? folder.cover_y : 50,
-            scale: folder.cover_scale !== undefined ? folder.cover_scale : 100
-        };
-        
-        this.renderFolders();
-    },
-
-    movePreview: function(dx, dy) {
-        this.previewState.x = Math.max(0, Math.min(100, this.previewState.x + dx));
-        this.previewState.y = Math.max(0, Math.min(100, this.previewState.y + dy));
-        this.updatePreviewDisplay();
-    },
-
-    zoomPreview: function(delta) {
-        this.previewState.scale = Math.max(50, Math.min(200, this.previewState.scale + delta));
-        this.updatePreviewDisplay();
-    },
-
-    updatePreviewDisplay: function() {
-        var imageEl = document.getElementById('folder-image-' + this.editingFolder);
-        if (imageEl) {
-            imageEl.style.backgroundPosition = this.previewState.x + '% ' + this.previewState.y + '%';
-            imageEl.style.backgroundSize = this.previewState.scale + '%';
-        }
-    },
-
-    savePreview: function() {
+      
         var self = this;
-        var folderId = this.editingFolder;
-        
-        api.updateFolder(folderId, {
-            cover_x: this.previewState.x,
-            cover_y: this.previewState.y,
-            cover_scale: this.previewState.scale
-        }).then(function(result) {
-            if (result) {
-                for (var i = 0; i < self.folders.length; i++) {
-                    if (self.folders[i].id === folderId) {
-                        self.folders[i].cover_x = self.previewState.x;
-                        self.folders[i].cover_y = self.previewState.y;
-                        self.folders[i].cover_scale = self.previewState.scale;
-                        break;
+      
+        new Sortable(container, {
+            animation: 150,
+            handle: '.folder-card',
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function(evt) {
+                var items = container.querySelectorAll('li.folder-card');
+                var newOrder = [];
+                for (var i = 0; i < items.length; i++) {
+                    var id = items[i].getAttribute('data-folder-id');
+                    if (id) {
+                        newOrder.push({ id: id, order: i + 1 });
                     }
                 }
-                
-                self.editingFolder = null;
-                self.renderFolders();
-                alert('Превью сохранено!');
+              
+                self.saveFoldersOrder(newOrder);
+            }
+        });
+    },
+    saveFoldersOrder: function(newOrder) {
+        console.log('Сохраняю порядок:', newOrder);
+      
+        var self = this;
+      
+        api.reorderFolders(newOrder).then(function(result) {
+            if (result && result.success) {
+                console.log('✅ Порядок сохранен');
+                self.createBackup('Изменение порядка папок');
             } else {
-                alert('Ошибка сохранения');
+                console.error('❌ Ошибка сохранения порядка');
+                alert('Ошибка сохранения порядка!');
             }
+        }).catch(function(error) {
+            console.error('❌ Ошибка сети:', error);
+            alert('Ошибка соединения при сохранении порядка.');
         });
     },
-
-    // Открываем папку (показываем фото)
-    openFolder: function(folder, updateHash) {
-        this.lastOpenedFolderId = folder.id;
-        
-        if (updateHash !== false) {
-            window.location.hash = 'folder=' + folder.id;
-        }
-        this.currentFolder = folder;
-        this.currentPhotos = [];
-        this.visiblePhotos = [];
-        
-        // Прячем главную страницу, показываем страницу папки
-        var coverSection = document.getElementById('rec-cover');
-        var mainPage = document.getElementById('main-page');
-        var mainFooter = document.getElementById('main-footer');
-        var folderPage = document.getElementById('folder-page');
-        var sidebarButtons = document.getElementById('sidebar-admin-buttons');
-        var titleText = document.getElementById('folder-title-text');
-        
-        if (coverSection) coverSection.style.display = 'none';
-// Настраиваем верхнюю полосу с обложкой папки
-var coverImage = document.getElementById('folder-cover-image');
-if (coverImage) {
-    coverImage.style.backgroundImage =
-        "url('https://static.tildacdn.ink/tild3730-6566-4766-b165-306164333335/photo-1499002238440-.jpg')";
-    coverImage.style.backgroundSize = 'cover';
-    coverImage.style.backgroundPosition = 'center';
-}
-        
-        if (mainPage) mainPage.style.display = 'none';
-        if (mainFooter) mainFooter.style.display = 'none';
-        if (folderPage) folderPage.style.display = 'block';
-        
-        if (titleText) titleText.textContent = folder.title;
-        
-        if (sidebarButtons) {
-            sidebarButtons.style.display = api.isAdmin() ? 'flex' : 'none';
-        }
-        
-        this.loadPhotos(folder.id);
-        window.scrollTo(0, 0);
-    },
-
-     // Возвращаемся на главную страницу
-showMainPage: function() {
-    this.editingFolder = null;
-    
-    if (this.keyHandler) {
-        document.removeEventListener('keydown', this.keyHandler);
-        this.keyHandler = null;
-    }
-    
-    // Сохраняем ID последней открытой папки
-    var lastFolderId = this.lastOpenedFolderId;
-    
-    window.location.hash = '';
-    
-    var coverSection = document.getElementById('rec-cover');
-    var mainPage = document.getElementById('main-page');
-    var mainFooter = document.getElementById('main-footer');
-    var folderPage = document.getElementById('folder-page');
-    
-    if (folderPage) folderPage.style.display = 'none';
-    if (coverSection) coverSection.style.display = 'block';
-    if (mainPage) mainPage.style.display = 'block';
-    if (mainFooter) mainFooter.style.display = 'block';
-    
-    this.currentFolder = null;
-    this.currentPhotos = [];
-    this.visiblePhotos = [];
-    
-    // Загружаем папки и прокручиваем к последней
-    this.loadFoldersAndScroll(lastFolderId);
-},
-
-// Новая функция для прокрутки
-loadFoldersAndScroll: function(targetFolderId) {
-    var self = this;
-    api.getFolders().then(function(folders) {
-        self.folders = folders;
-        self.renderFolders();
-        
-        // Прокручиваем к нужной папке
-        if (targetFolderId) {
-            setTimeout(function() {
-                var folderEl = document.getElementById('folder-' + targetFolderId);
-                if (folderEl) {
-                    folderEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    // Подсвечиваем briefly
-                    folderEl.style.boxShadow = '0 0 20px #3498db';
-                    setTimeout(function() {
-                        folderEl.style.boxShadow = '';
-                    }, 2000);
-                }
-            }, 100);
-        }
-    });
-},
-
-    // Загружаем фото в папке (двухэтапно: сначала список, потом ссылки)
-loadPhotos: function(folderId, offset) {
-    offset = offset || 0;
-    var self = this;
-    var container = document.getElementById('photos-container');
-    
-    if (offset === 0) {
-        this.currentPhotos = [];
-        this.visiblePhotos = [];
-        if (container) container.innerHTML = '<p>Загрузка...</p>';
-    }
-    
-    // Загружаем ВСЕ фото сразу (но будем показывать частями)
-    api.getPhotosList(folderId).then(function(photos) {
-        if (!photos || photos.length === 0) {
-            if (offset === 0 && container) {
-                container.innerHTML = '<p>В этой папке пока нет фото</p>';
-            }
-            return;
-        }
-        
-        // Если фото много, загружаем URL порциями по 40
-        var BATCH_SIZE = 40;
-        var allPhotos = photos;
-        
-        // Сортируем по message_id
-        allPhotos.sort(function(a, b) { return parseInt(a.id) - parseInt(b.id); });
-        
-        // Берём первую партию для отображения
-        var photosToLoad = allPhotos.slice(offset, offset + BATCH_SIZE);
-        
-        if (photosToLoad.length === 0) {
-            return; // Все загружены
-        }
-        
-        // Получаем URL для этой партии
-        return api.getPhotosUrls(folderId, photosToLoad).then(function(urls) {
-            // Добавляем URL к фото
-            for (var i = 0; i < photosToLoad.length; i++) {
-                var photo = photosToLoad[i];
-                if (urls[photo.id]) {
-                    photo.url = urls[photo.id];
-                }
-                self.currentPhotos.push(photo);
-            }
-            
-            self.visiblePhotos = self.currentPhotos;
-            self.renderPhotos(offset > 0);
-            
-            // Если есть ещё фото — показываем кнопку "Загрузить ещё"
-            if (offset + BATCH_SIZE < allPhotos.length) {
-                self.showLoadMoreButton(folderId, offset + BATCH_SIZE, allPhotos);
-            }
-        });
-    }).catch(function(error) {
-        console.error('Ошибка загрузки фото:', error);
-        if (offset === 0 && container) {
-            container.innerHTML = '<p>Ошибка загрузки</p>';
-        }
-    });
-},
-
-showLoadMoreButton: function(folderId, nextOffset, allPhotos) {
-    var self = this;
-    var container = document.getElementById('photos-container');
-    if (!container) return;
-    
-    // Удаляем старую кнопку если есть
-    var oldBtn = document.getElementById('load-more-container');
-    if (oldBtn) oldBtn.remove();
-    
-    var loadMoreDiv = document.createElement('div');
-    loadMoreDiv.id = 'load-more-container';
-    loadMoreDiv.style.cssText = 'grid-column:1/-1;text-align:center;padding:20px;';
-    loadMoreDiv.innerHTML = '<button id="load-more-btn" style="padding:15px 30px;background:rgba(0,0,0,0.05);border:none;border-radius:8px;cursor:pointer;color:#666;font-size:16px;">+ Загрузить ещё фото</button>';
-    
-    container.appendChild(loadMoreDiv);
-    
-    document.getElementById('load-more-btn').onclick = function() {
-        this.textContent = 'Загружается...';
-        self.loadPhotos(folderId, nextOffset);
-    };
-},
-
-    // Показываем фото на странице
-    renderPhotos: function() {
+    renameFolder: function(folderId, currentTitle) {
+        var id = folderId || (gallery.currentFolder ? gallery.currentFolder.id : null);
+        var title = currentTitle || (gallery.currentFolder ? gallery.currentFolder.title : '');
+      
+        if (!id) return;
+      
+        var newTitle = prompt('Новое название:', title);
+        if (!newTitle || newTitle === title) return;
+      
         var self = this;
-        var grid = document.getElementById('photos-container');
-        if (!grid) return;
-        
-        if (self.visiblePhotos.length === 0) {
-            grid.innerHTML = '<div class="empty-state"><h4>В этой папке пока нет фото</h4></div>';
-            return;
-        }
-        
-        var html = '';
-        for (var i = 0; i < self.visiblePhotos.length; i++) {
-            html += self.createPhotoItem(self.visiblePhotos[i], i);
-        }
-        grid.innerHTML = html;
-    },
-
-    // Создаём HTML для одного фото
-    createPhotoItem: function(photo, index) {
-        var isAdmin = api.isAdmin();
-        var hiddenClass = photo.hidden ? 'hidden-photo' : '';
-        
-        var adminActions = '';
-        if (isAdmin) {
-            adminActions = '<div class="photo-item__admin-actions" onclick="event.stopPropagation()">' +
-                '<button onclick="event.stopPropagation(); admin.togglePhotoHidden(\'' + photo.id + '\', ' + !photo.hidden + ')" title="' + (photo.hidden ? 'Показать' : 'Скрыть') + '">' + (photo.hidden ? '👁' : '🙈') + '</button>' +
-                '<button onclick="event.stopPropagation(); admin.deletePhoto(\'' + photo.id + '\')" title="Удалить">🗑️</button>' +
-            '</div>';
-        }
-        
-        // Если URL нет (фото удалено в Telegram), показываем заглушку
-        var imgSrc = photo.url || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ccc"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%23999"%3EНет фото%3C/text%3E%3C/svg%3E';
-        
-        return '<div class="photo-item ' + hiddenClass + '" data-id="' + photo.id + '" data-index="' + index + '" onclick="gallery.handlePhotoClick(event, ' + index + ', \'' + photo.id + '\')">' +
-            '<img src="' + imgSrc + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">' +
-            adminActions +
-        '</div>';
-    },
-
-
-    // Обработчик клика по фото — либо открывает, либо выбирает (в режиме выбора)
-    handlePhotoClick: function(e, index, photoId) {
-        if (typeof admin !== 'undefined' && admin.isSelectionMode) {
-            e.stopPropagation();
-            var checkbox = e.currentTarget.querySelector('.photo-checkbox-custom');
-            if (checkbox) {
-                admin.togglePhotoSelection(photoId, checkbox);
+        api.updateFolder(id, { title: newTitle }).then(function(result) {
+            if (result) {
+                if (gallery.currentFolder && gallery.currentFolder.id === id) {
+                    gallery.currentFolder.title = newTitle;
+                    var titleText = document.getElementById('folder-title-text');
+                    if (titleText) titleText.textContent = newTitle;
+                }
+                self.createBackup('Переименование папки: ' + newTitle);
+                gallery.loadFolders();
+            } else {
+                alert('Ошибка при переименовании');
             }
+        }).catch(function(e) {
+            alert('Ошибка при переименовании');
+        });
+    },
+    toggleFolderHidden: function(folderId, hidden) {
+        var self = this;
+        api.updateFolder(folderId, { hidden: hidden }).then(function(result) {
+            if (result) {
+                self.createBackup((hidden ? 'Скрытие' : 'Показ') + ' папки');
+                gallery.loadFolders();
+            } else {
+                console.error('Ошибка скрытия папки');
+            }
+        }).catch(function(e) {
+            console.error('Ошибка');
+        });
+    },
+    deleteFolder: function(folderId) {
+        var id = folderId || (gallery.currentFolder ? gallery.currentFolder.id : null);
+        if (!id) return;
+      
+        if (!confirm('Удалить папку? Фото останутся в Telegram, но исчезнут с сайта.')) return;
+      
+        // На самом деле мы не удаляем папку полностью, а просто скрываем
+        // Потому что в Telegram тема остаётся
+        var self = this;
+        api.updateFolder(id, { hidden: true }).then(function(result) {
+            if (result) {
+                self.createBackup('Скрытие папки (удаление)');
+                if (gallery.currentFolder && gallery.currentFolder.id === id) {
+                    gallery.showMainPage();
+                } else {
+                    gallery.loadFolders();
+                }
+            } else {
+                alert('Ошибка при удалении');
+            }
+        }).catch(function(e) {
+            alert('Ошибка при удалении');
+        });
+    },
+    // === УПРАВЛЕНИЕ ФОТО ===
+    deletePhoto: function(photoId) {
+        if (!confirm('Удалить фото? Оно исчезнет с сайта, но останется в Telegram.')) return;
+      
+        var self = this;
+        var folderId = gallery.currentFolder ? gallery.currentFolder.id : null;
+      
+        if (!folderId) {
+            alert('Ошибка: не выбрана папка');
             return;
         }
-        this.openFullscreen(index);
+      
+        api.deletePhoto(folderId, photoId).then(function(result) {
+            if (result) {
+                self.createBackup('Удаление фото');
+                gallery.loadPhotos(folderId);
+            } else {
+                alert('Ошибка при удалении');
+            }
+        }).catch(function(e) {
+            alert('Ошибка при удалении');
+        });
     },
-    // Открываем фото на весь экран
-    openFullscreen: function(index) {
-        if (index < 0 || index >= this.visiblePhotos.length) return;
-        
-        this.currentPhotoIndex = index;
-        var photo = this.visiblePhotos[index];
-        
+    deleteCurrentPhoto: function() {
+        if (gallery.currentPhotos.length === 0 || gallery.currentPhotoIndex < 0) return;
+      
+        var photo = gallery.currentPhotos[gallery.currentPhotoIndex];
+        if (!photo) return;
+      
+        if (!confirm('Удалить это фото?')) return;
+      
+        var self = this;
+        var folderId = gallery.currentFolder ? gallery.currentFolder.id : null;
+      
+        api.deletePhoto(folderId, photo.id).then(function(result) {
+            if (result && gallery.currentFolder) {
+                self.createBackup('Удаление фото');
+                gallery.closeFullscreen();
+                gallery.loadPhotos(gallery.currentFolder.id);
+            } else {
+                alert('Ошибка при удалении');
+            }
+        }).catch(function(e) {
+            alert('Ошибка при удалении');
+        });
+    },
+    // === СКРЫТИЕ/ПОКАЗ ФОТО ===
+    togglePhotoHidden: function(photoId, hidden) {
+        var folderId = gallery.currentFolder ? gallery.currentFolder.id : null;
+        if (!folderId) return;
+
+        var self = this;
+        api.updatePhoto(folderId, photoId, { hidden: hidden }).then(function(result) {
+            if (result && result.success) {
+                self.createBackup((hidden ? 'Скрытие' : 'Показ') + ' фото');
+                gallery.loadPhotos(folderId);
+            } else {
+                alert('Ошибка при ' + (hidden ? 'скрытии' : 'показе') + ' фото');
+            }
+        }).catch(function() {
+            alert('Ошибка соединения');
+        });
+    },
+
+    // === МАССОВОЕ УДАЛЕНИЕ ===
+    enterSelectionMode: function() {
+        this.isSelectionMode = true;
+        this.selectedPhotos = [];
+       
+        // Скрываем кнопку "Выбрать фото", показываем панель действий
+        var selectBtn = document.querySelector('#sidebar-admin-buttons > .admin-btn');
+        var toolbar = document.getElementById('selection-toolbar');
+       
+        if (selectBtn) selectBtn.style.display = 'none';
+        if (toolbar) {
+            toolbar.style.display = 'flex';
+            // Сбрасываем текст кнопки "Выбрать все"
+            var selectAllBtn = document.getElementById('btn-select-all');
+            if (selectAllBtn) selectAllBtn.textContent = 'Выбрать все';
+        }
+       
+        // Добавляем чекбоксы к фото
+        this.addCheckboxesToPhotos();
+        this.updateSelectionCount();
+    },
+   
+    exitSelectionMode: function() {
+        this.isSelectionMode = false;
+        this.selectedPhotos = [];
+       
+        // Показываем кнопку "Выбрать фото", скрываем панель действий
+        var selectBtn = document.querySelector('#sidebar-admin-buttons > .admin-btn');
+        var toolbar = document.getElementById('selection-toolbar');
+       
+        if (selectBtn) selectBtn.style.display = 'block';
+        if (toolbar) toolbar.style.display = 'none';
+       
+        // Убираем чекбоксы
+        this.removeCheckboxesFromPhotos();
+    },
+   
+    addCheckboxesToPhotos: function() {
+        var photos = document.querySelectorAll('.photo-item');
+        var self = this;
+       
+        for (var i = 0; i < photos.length; i++) {
+            var photo = photos[i];
+            if (photo.querySelector('.photo-checkbox-custom')) {
+                continue;
+            }
+            var photoId = photo.getAttribute('data-id');
+           
+            // Создаём чекбокс
+            var checkbox = document.createElement('div');
+            checkbox.className = 'photo-checkbox-custom';
+            checkbox.setAttribute('data-photo-id', photoId);
+           
+            // Обработчик клика
+            checkbox.onclick = function(e) {
+                e.stopPropagation();
+                var id = this.getAttribute('data-photo-id');
+                self.togglePhotoSelection(id, this);
+            };
+           
+            photo.appendChild(checkbox);
+
+            // Устанавливаем начальное состояние
+            var shouldCheck = self.selectedPhotos.indexOf(photoId) > -1;
+            if (shouldCheck) {
+                checkbox.classList.add('checked');
+                checkbox.innerHTML = '✓';
+            }
+        }
+    },
+   
+    removeCheckboxesFromPhotos: function() {
+        var checkboxes = document.querySelectorAll('.photo-checkbox-custom');
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].remove();
+        }
+    },
+   
+    toggleSelectAll: function() {
+        var allIds = gallery.currentPhotos.map(function(p) { return p.id; });
+        var allSelected = (this.selectedPhotos.length === allIds.length);
+
+        if (allSelected) {
+            // Снять все
+            this.selectedPhotos = [];
+        } else {
+            // Выбрать все
+            this.selectedPhotos = allIds.slice();
+        }
+
+        var checkboxes = document.querySelectorAll('.photo-checkbox-custom');
+        for (var i = 0; i < checkboxes.length; i++) {
+            var id = checkboxes[i].getAttribute('data-photo-id');
+            if (this.selectedPhotos.indexOf(id) > -1) {
+                checkboxes[i].classList.add('checked');
+                checkboxes[i].innerHTML = '✓';
+            } else {
+                checkboxes[i].classList.remove('checked');
+                checkboxes[i].innerHTML = '';
+            }
+        }
+        this.updateSelectionCount();
+    },
+   
+    togglePhotoSelection: function(photoId, checkboxEl) {
+        var index = this.selectedPhotos.indexOf(photoId);
+        if (index > -1) {
+            // Снять выделение
+            this.selectedPhotos.splice(index, 1);
+            checkboxEl.classList.remove('checked');
+            checkboxEl.innerHTML = '';
+        } else {
+            // Выбрать
+            this.selectedPhotos.push(photoId);
+            checkboxEl.classList.add('checked');
+            checkboxEl.innerHTML = '✓';
+        }
+        this.updateSelectionCount();
+    },
+   
+    updateSelectionCount: function() {
+        var btn = document.getElementById('btn-delete-selected');
+        var total = gallery.currentPhotos.length;
+        var count = this.selectedPhotos.length;
+        if (btn) {
+            btn.textContent = 'Удалить выбранные (' + count + ')';
+            btn.disabled = count === 0;
+            btn.style.opacity = count === 0 ? '0.5' : '1';
+        }
+        var selectAllBtn = document.getElementById('btn-select-all');
+        if (selectAllBtn) {
+            selectAllBtn.textContent = (count === total && total > 0) ? 'Снять все выделения' : 'Выбрать все';
+        }
+    },
+   
+    deleteSelectedPhotos: function() {
+        var folderId = gallery.currentFolder ? gallery.currentFolder.id : null;
+        if (!folderId) return;
+       
+        var ids = this.selectedPhotos.slice();
+        if (!ids.length) return;
+        if (!confirm('Удалить ' + ids.length + ' фото?')) return;
+        var self = this;
+        var deleted = 0;
+        (function next() {
+            if (!ids.length) {
+                self.exitSelectionMode();
+                gallery.loadPhotos(folderId);
+                alert('Удалено: ' + deleted);
+                return;
+            }
+            api.deletePhoto(folderId, ids.shift()).then(function() {
+                deleted++;
+                next();
+            }).catch(next);
+        })();
+    },
+    // === ОБЛОЖКИ ПАПОК ===
+    setFolderCover: function() {
         var img = document.getElementById('fullscreen-image');
-        var link = document.getElementById('download-link');
-        var viewer = document.getElementById('fullscreen-viewer');
-        
-        var btnCover = document.getElementById('btn-set-cover');
-        var btnDelete = document.getElementById('btn-delete-photo');
-        
-        if (btnCover) btnCover.style.display = api.isAdmin() ? 'inline-block' : 'none';
-        if (btnDelete) btnDelete.style.display = api.isAdmin() ? 'inline-block' : 'none';
-        
-        if (img) img.src = photo.url || '';
-        if (link) link.href = photo.url || '#';
-        if (viewer) viewer.style.display = 'flex';
-        
-        // Клавиатурная навигация
+        if (!img || !img.src || !gallery.currentFolder) return;
+      
+        var folderId = gallery.currentFolder.id;
+      
+        // Находим текущее фото в списке
+        var currentPhoto = gallery.visiblePhotos[gallery.currentPhotoIndex];
+        if (!currentPhoto || !currentPhoto.file_id) {
+            alert('Ошибка: не найдено фото');
+            return;
+        }
+      
         var self = this;
-        if (this.keyHandler) {
-            document.removeEventListener('keydown', this.keyHandler);
-        }
-        
-        this.keyHandler = function(e) {
-            if (e.key === 'Escape') {
-                self.closeFullscreen();
-            } else if (e.key === 'ArrowLeft') {
-                self.prevPhoto();
-            } else if (e.key === 'ArrowRight') {
-                self.nextPhoto();
+        // Сохраняем file_id как обложку (не URL!)
+        api.updateFolder(folderId, { cover_url: currentPhoto.file_id }).then(function(result) {
+            if (result) {
+                gallery.currentFolder.cover_url = currentPhoto.file_id;
+                gallery.closeFullscreen();
+                gallery.loadFolders();
+                self.createBackup('Установка превью папки');
+            } else {
+                alert('Ошибка установки обложки');
             }
-        };
-        document.addEventListener('keydown', this.keyHandler);
-        
-        // Свайпы для мобильных
-        this.initSwipe();
+        }).catch(function(e) {
+            console.error('Ошибка:', e);
+            alert('Ошибка установки обложки');
+        });
     },
-
-    initSwipe: function() {
+    // === ОЧИСТКА ХРАНИЛИЩА (опасно!) ===
+    openClearStorageModal: function() {
+        document.getElementById('clear-storage-modal').style.display = 'flex';
+        document.getElementById('clear-storage-password').value = '';
+        document.getElementById('clear-storage-error').textContent = '';
+        document.getElementById('clear-storage-password').focus();
+    },
+    closeClearStorageModal: function() {
+        document.getElementById('clear-storage-modal').style.display = 'none';
+    },
+    // === Очистка хранилища ===
+      
+    confirmClearStorage: function() {
+        var password = document.getElementById('clear-storage-password').value;
+        var errorEl = document.getElementById('clear-storage-error');
+        if (!password) {
+            errorEl.textContent = 'Введите пароль';
+            return;
+        }
         var self = this;
-        var viewerEl = document.getElementById('fullscreen-viewer');
-        if (!viewerEl) return;
-        
-        var imageContainer = viewerEl.querySelector('.fullscreen-viewer__image-container');
-        if (!imageContainer) return;
-        
-        var touchStartX = 0;
-        var touchEndX = 0;
-        
-        imageContainer.ontouchstart = function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-        };
-        
-        imageContainer.ontouchend = function(e) {
-            touchEndX = e.changedTouches[0].screenX;
-            var diff = touchStartX - touchEndX;
-            if (Math.abs(diff) > 50) {
-                if (diff > 0) self.nextPhoto();
-                else self.prevPhoto();
+        api.login(password).then(function(result) {
+            if (!result.success) {
+                errorEl.textContent = 'Неверный пароль';
+                return;
             }
+            if (!confirm('⚠️ Это удалит ВСЕ папки и фото из хранилища.\nАдмин-токены останутся.\n\nПродолжить?')) {
+                return;
+            }
+            api.clearStorage().then(function(result) {
+                if (result.success) {
+                    alert(
+                        '✅ Хранилище очищено\n' +
+                        'Папок: ' + result.deletedFolders + '\n' +
+                        'Фото: ' + result.deletedPhotos
+                    );
+                    self.closeClearStorageModal();
+                    gallery.loadFolders();
+                } else {
+                    alert('❌ Ошибка очистки: ' + (result.error || 'unknown'));
+                }
+            });
+        });
+    },
+    // === ОБНОВЛЕНИЕ СТРАНИЦЫ ===
+    reloadPage: function() {
+        location.reload(true);
+    },
+    // === ПРОСМОТР ХРАНИЛИЩА ===
+    viewStorage: function() {
+        var token = api.getToken();
+      
+        if (!token) {
+            alert('Ошибка: не авторизован');
+            return;
+        }
+      
+        // Создаём модальное окно
+        var modal = document.getElementById('storage-viewer');
+        if (modal) modal.remove();
+      
+        modal = document.createElement('div');
+        modal.id = 'storage-viewer';
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:10002;overflow:auto;display:none;';
+        modal.innerHTML =
+            '<div style="background:#fff;max-width:900px;margin:50px auto;padding:30px;border-radius:8px;position:relative;">' +
+                '<button onclick="document.getElementById(\'storage-viewer\').remove()" style="position:absolute;top:15px;right:15px;background:none;border:none;font-size:24px;cursor:pointer;">×</button>' +
+                '<h2 style="margin-top:0;">📦 Данные хранилища</h2>' +
+                '<div id="storage-content" style="font-family:monospace;font-size:13px;line-height:1.6;">' +
+                    '<p>Загрузка...</p>' +
+                '</div>' +
+            '</div>';
+      
+        document.body.appendChild(modal);
+        modal.style.display = 'block';
+      
+        // Загружаем данные через API
+        fetch(API_BASE + '/admin/storage-info', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(response) {
+            if (!response.success) {
+                document.getElementById('storage-content').innerHTML = '<p style="color:red;">Ошибка: ' + (response.error || 'Unknown error') + '</p>';
+                return;
+            }
+          
+            // Формируем HTML с данными
+            var folders = response.folders || [];
+            var photos = response.photos || [];
+          
+            var html = '';
+          
+            // Статистика
+            html += '<h3>📊 Статистика</h3>';
+            html += '<p><strong>Папок:</strong> ' + folders.length + '</p>';
+            html += '<p><strong>Фото:</strong> ' + photos.length + '</p>';
+          
+            // Папки
+            html += '<h3 style="margin-top:20px;">📁 ПАПКИ</h3>';
+            html += '<table style="width:100%;border-collapse:collapse;">';
+            html += '<tr style="background:#f0f0f0;"><th style="padding:8px;border:1px solid #ddd;">ID</th><th style="padding:8px;border:1px solid #ddd;">Название</th><th style="padding:8px;border:1px solid #ddd;">Скрыта</th></tr>';
+          
+            for (var i = 0; i < folders.length; i++) {
+                var f = folders[i];
+                html += '<tr>';
+                html += '<td style="padding:8px;border:1px solid #ddd;">' + f.id + '</td>';
+                html += '<td style="padding:8px;border:1px solid #ddd;">' + f.title + '</td>';
+                html += '<td style="padding:8px;border:1px solid #ddd;">' + (f.hidden ? '✓' : '') + '</td>';
+                html += '</tr>';
+            }
+            html += '</table>';
+          
+            // Фото
+            var activePhotos = 0;
+            var deletedPhotos = 0;
+            for (var j = 0; j < photos.length; j++) {
+                if (photos[j].deleted) deletedPhotos++;
+                else activePhotos++;
+            }
+          
+            html += '<h3 style="margin-top:20px;">📷 ФОТО</h3>';
+            html += '<p>Активных: ' + activePhotos + ' | Удалённых: ' + deletedPhotos + '</p>';
+          
+            document.getElementById('storage-content').innerHTML = html;
+        })
+        .catch(function(error) {
+            document.getElementById('storage-content').innerHTML = '<p style="color:red;">Ошибка загрузки: ' + error.message + '</p>';
+        });
+    },
+    // === ВОССТАНОВЛЕНИЕ ИЗ БЭКАПА ===
+    restoreFromBackup: function() {
+        var input = document.getElementById('restore-backup-file');
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'file';
+            input.id = 'restore-backup-file';
+            input.accept = '.json';
+            input.style.display = 'none';
+            document.body.appendChild(input);
+        }
+        input.onchange = function() {
+            var file = input.files[0];
+            if (!file) return;
+            if (!confirm('⚠️ Восстановить данные из бэкапа?\nТекущие данные будут перезаписаны.')) {
+                input.value = '';
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var backupData = JSON.parse(e.target.result);
+                    api.restoreBackup(backupData).then(function(result) {
+                        if (result.success) {
+                            alert(
+                                '♻️ Восстановление завершено\n' +
+                                'Папок: ' + result.restoredFolders + '\n' +
+                                'Фото: ' + result.restoredPhotos
+                            );
+                            gallery.loadFolders();
+                        } else {
+                            alert('❌ Ошибка восстановления: ' + (result.error || 'unknown'));
+                        }
+                    });
+                } catch (err) {
+                    alert('❌ Неверный формат файла бэкапа');
+                }
+            };
+            reader.readAsText(file);
+            input.value = '';
         };
-    },
-
-    closeFullscreen: function() {
-        var viewer = document.getElementById('fullscreen-viewer');
-        if (viewer) viewer.style.display = 'none';
-        if (this.keyHandler) {
-            document.removeEventListener('keydown', this.keyHandler);
-            this.keyHandler = null;
-        }
-    },
-
-    prevPhoto: function() {
-        if (this.currentPhotoIndex > 0) {
-            this.openFullscreen(this.currentPhotoIndex - 1);
-        }
-    },
-
-    nextPhoto: function() {
-        if (this.currentPhotoIndex < this.visiblePhotos.length - 1) {
-            this.openFullscreen(this.currentPhotoIndex + 1);
-        }
-    },
-    
-    allFoldersLoaded: function() {
-        return true; // Теперь всегда true, нет пагинации папок
+        input.click();
     }
 };
-
-// Запускаем при загрузке страницы
+// При загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-    gallery.init();
-});
-
-// Прокрутка к папкам
-function scrollToFolders() {
-    var mainPage = document.getElementById('main-page');
-    if (mainPage) {
-        mainPage.scrollIntoView({ behavior: 'smooth' });
+    if (api.isAdmin()) {
+        admin.showAdminUI();
+        admin.startInactivityTimer();
     }
-}
+  
+    var passwordInput = document.getElementById('admin-password');
+    if (passwordInput) {
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') admin.login();
+        });
+    }
+  
+    // Сброс таймера при любой активности
+    ['click', 'touchstart', 'keydown', 'scroll'].forEach(function(event) {
+        document.addEventListener(event, function() {
+            if (admin.isAdminActive) {
+                admin.resetInactivityTimer();
+            }
+        });
+    });
+});
