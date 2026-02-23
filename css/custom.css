@@ -259,12 +259,12 @@
 }
 .preview-editor__btn.zoom-out {
     bottom: 8px;
-    left: calc(50% - 58px);
+    left: calc(50% - 68px);
     font-size: 16px;
 }
 .preview-editor__btn.zoom-in {
     bottom: 8px;
-    left: calc(50% + 32px);
+    left: calc(50% + 42px);
     font-size: 16px;
 }
 .preview-editor__btn.save {
